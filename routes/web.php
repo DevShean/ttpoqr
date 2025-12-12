@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\User\QrController;
+use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\AvailabilityController as UserAvailabilityController;
 use App\Http\Controllers\Admin\AvailabilityController;
 use App\Http\Controllers\Admin\AppointmentController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\QrController as AdminQrController;
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\AttendanceFormController;
+use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\AppointmentRequestController;
 
 Route::get('/', function () {
@@ -68,20 +70,10 @@ Route::middleware(['web'])->group(function () {
     Route::post('/admin/attendance-forms/save-record', [AttendanceFormController::class, 'saveRecord'])->name('admin.attendance_forms.saveRecord');
     Route::delete('/admin/attendance-records/{attendanceRecord}', [AttendanceFormController::class, 'deleteRecord'])->name('admin.attendance_records.delete');
 
-    Route::get('/admin/logs', function () {
-        if (!Auth::check() || Auth::user()->usertype_id != 1) {
-            return redirect('/');
-        }
-        return view('admin.logs');
-    })->name('admin.logs');
+    Route::get('/admin/logs', [LogController::class, 'index'])->name('admin.logs');
 });
 
-Route::get('/user/home', function () {
-    if (!Auth::check() || Auth::user()->usertype_id != 2) {
-        return redirect('/');
-    }
-    return view('user.home');
-})->name('user.home');
+Route::get('/user/home', [HomeController::class, 'index'])->name('user.home');
 
 // User profile CRUD (protected) and public profile + QR
 Route::middleware(['web'])->group(function () {

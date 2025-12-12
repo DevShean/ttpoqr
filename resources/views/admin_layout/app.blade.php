@@ -37,9 +37,6 @@
 					<div class="flex items-center gap-3">
 						<a href="{{ route('admin.home') }}" 
 						   class="flex items-center gap-2 group" title="Go to Admin Home">
-							<div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition">
-								<i class="fi fi-rr-dashboard text-white"></i>
-							</div>
 							<span class="hidden sm:block text-sm font-medium group-hover:underline">Admin</span>
 						</a>
 					</div>

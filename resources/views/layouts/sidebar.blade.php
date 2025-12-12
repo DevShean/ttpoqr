@@ -51,7 +51,7 @@
             <div class="{{ request()->routeIs('user.home') ? 'bg-white/20 p-2 rounded-lg' : 'group-hover:bg-blue-100 p-2 rounded-lg transition-colors' }}">
                 <i class="fi fi-rr-home text-base {{ request()->routeIs('user.home') ? 'text-white' : 'text-gray-500 group-hover:text-blue-500' }}"></i>
             </div>
-            <span class="font-medium">Home</span>
+            <span class="font-medium">Dashboard</span>
             @if(request()->routeIs('user.home'))
                 <div class="ml-auto w-2 h-2 bg-white rounded-full"></div>
             @endif
