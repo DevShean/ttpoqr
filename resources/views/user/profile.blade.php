@@ -32,7 +32,7 @@
                             @php
                                 $avatarUrl = !empty($profile?->avatar_path)
                                     ? Storage::url($profile->avatar_path)
-                                    : asset('assets/img/default-avatar.png');
+                                    : asset('assets/img/default_pfp.jpg');
                                 $avatarVer = ($profile?->updated_at ? $profile->updated_at->timestamp : time());
                             @endphp
                             <div class="w-40 h-40 rounded-full overflow-hidden mx-auto border-4 border-white shadow-lg">
@@ -153,19 +153,31 @@
                                 </div>
 
                                 {{-- Contact Number --}}
-                                <div class="space-y-2">
+                                <div class="space-y-2 md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700">
                                         Contact Number
                                         <span class="text-red-500">*</span>
                                     </label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <span class="text-gray-500">+63</span>
-                                        </div>
-                                        <input type="tel" name="contactnum" value="{{ old('contactnum', $profile->contactnum ?? '') }}"
-                                               class="w-full pl-14 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 placeholder-gray-400"
-                                               placeholder="912 345 6789" required />
+                                    <div class="flex gap-2">
+                                        <input type="tel" 
+                                               name="contactnum" 
+                                               value="{{ old('contactnum', $profile->contactnum ?? '') }}"
+                                               placeholder="09123456789"
+                                               maxlength="11"
+                                               pattern="[0-9]{11}"
+                                               inputmode="numeric"
+                                               class="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 placeholder-gray-400"
+                                               required 
+                                               onkeydown="return /[0-9]/.test(event.key) || ['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(event.key)" />
+                                        <button type="button"
+                                                class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium rounded-lg shadow-sm hover:from-emerald-700 hover:to-emerald-800 transition duration-200 flex items-center whitespace-nowrap">
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948.684l1.498 4.493a1 1 0 00.502.756l2.048 1.029a1 1 0 00.502.756l2.048 1.029a1 1 0 001.386-.27l1.498-4.493a1 1 0 00-.948-1.684H19a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
+                                            </svg>
+                                            <span>Verify Number</span>
+                                        </button>
                                     </div>
+                                    <p class="text-xs text-gray-500">11 digits (e.g., 09123456789)</p>
                                 </div>
 
                                 {{-- Gender --}}
@@ -196,6 +208,68 @@
                                             <option value="{{ $s }}" {{ $cs===$s ? 'selected' : '' }}>{{ $s }}</option>
                                         @endforeach
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Email Verification Card --}}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                            <div class="flex items-center">
+                                <div class="p-2 rounded-lg bg-blue-100 text-blue-600 mr-3">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900">Email Verification</h3>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6 space-y-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                                <div class="flex gap-2">
+                                    @php
+                                        $emailVerified = auth()->user()->email_verified_at;
+                                    @endphp
+                                    <input type="email" 
+                                           name="email"
+                                           value="{{ auth()->user()->email ?? '' }}" 
+                                           {{ $emailVerified ? 'readonly' : '' }}
+                                           class="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 {{ $emailVerified ? 'bg-gray-50 text-gray-600' : '' }}" />
+                                    @if(!$emailVerified)
+                                        <button type="button" onclick="sendVerificationEmail()"
+                                                id="verifyEmailBtn"
+                                                class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 transition duration-200 flex items-center whitespace-nowrap">
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                            </svg>
+                                            <span id="verifyBtnText">Verify Email</span>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="pt-2">
+                                <div class="flex items-center gap-2 p-3 rounded-lg {{ $emailVerified ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200' }}">
+                                    @if($emailVerified)
+                                        <svg class="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-medium text-green-800">Email Verified</p>
+                                            <p class="text-xs text-green-700">{{ $emailVerified->format('M d, Y') }}</p>
+                                        </div>
+                                    @else
+                                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-medium text-yellow-800">Email Not Verified</p>
+                                            <p class="text-xs text-yellow-700">Please verify your email to access all features</p>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -361,6 +435,62 @@
                 }, 2000);
             }
         });
+
+        // Email verification function
+        window.sendVerificationEmail = function() {
+            const btn = document.getElementById('verifyEmailBtn');
+            const btnText = document.getElementById('verifyBtnText');
+            const originalText = btnText.textContent;
+            
+            btn.disabled = true;
+            btnText.textContent = 'Sending...';
+            
+            // Show loading alert
+            Swal.fire({
+                title: 'Sending...',
+                text: 'Please wait while we send the verification email.',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: (modal) => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch('/user/send-verification-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('Failed to send verification email');
+                return r.json();
+            })
+            .then(data => {
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Verification email has been sent to your email address. Please check your inbox and click the link to verify.',
+                    icon: 'success',
+                    confirmButtonColor: '#3B82F6'
+                });
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to send verification email. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444'
+                });
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btnText.textContent = originalText;
+            });
+        }
     </script>
     @endpush
 @endsection

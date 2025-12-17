@@ -17,8 +17,8 @@
                     <p class="text-blue-100 text-sm font-medium">QR Codes Generated</p>
                     <p class="text-3xl font-bold mt-2">{{ $qrCount ?? 0 }}</p>
                 </div>
-                <svg class="w-12 h-12 text-blue-300 opacity-50" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4zm2 0v12h12V4H4z"/>
+                <svg class="w-12 h-12 text-blue-300 opacity-50" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zm-10 8h8v8H3v-8zm2 2v4h4v-4H5zm10 0h4v4h-4v-4zm2-2h2v2h-2v-2z"/>
                 </svg>
             </div>
         </div>

@@ -48,7 +48,9 @@
 					 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
 					 : 'text-gray-700 hover:bg-gray-100/80 hover:shadow-sm hover:translate-x-1' }}">
 			<div class="{{ request()->routeIs('admin.home') ? 'bg-white/20 p-2 rounded-lg' : 'group-hover:bg-blue-100 p-2 rounded-lg transition-colors' }}">
-				<i class="fi fi-rr-dashboard text-base {{ request()->routeIs('admin.home') ? 'text-white' : 'text-gray-500 group-hover:text-blue-500' }}"></i>
+			<svg class="w-6 h-6 {{ request()->routeIs('admin.home') ? 'text-white' : 'text-gray-500 group-hover:text-blue-500' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+				<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/>
+			</svg>
 			</div>
 			<span class="font-medium">Dashboard</span>
 			@if(request()->routeIs('admin.home'))
@@ -60,14 +62,28 @@
 		<div x-data="{ open: {{ request()->routeIs('admin.users*') || request()->routeIs('admin.qr*') ? 'true' : 'false' }} }" class="mt-1">
 			<button @click="open = !open" class="w-full group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100/80 hover:shadow-sm transition-all">
 				<div class="p-2 rounded-lg group-hover:bg-blue-100">
-					<i class="fi fi-rr-users text-base text-gray-500 group-hover:text-blue-600"></i>
+					<svg class="w-6 h-6 text-gray-500 group-hover:text-blue-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+						<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+					</svg>
 				</div>
 				<span class="font-medium">Manage User</span>
-				<i class="fi fi-rr-angle-small-down ml-auto text-gray-400" :class="open ? 'rotate-180' : ''"></i>
+				<svg class="w-5 h-5 ml-auto text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+				</svg>
 			</button>
 			<div x-show="open" x-transition class="ml-12 mt-1 space-y-1">
-				<a href="{{ route('admin.users') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.users') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100' }}">Users</a>
-				<a href="{{ route('admin.qr') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.qr') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100' }}">QR Generated</a>
+				<a href="{{ route('admin.users') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.users') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100' }}">
+					<svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+						<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+					</svg>
+					Users
+				</a>
+				<a href="{{ route('admin.qr') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.qr') ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-100' }}">
+					<svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+						<path d="M3 11h8V3H3v8zm0 8h8v-8H3v8zm10 0h8v-8h-8v8zm0-10v2h8V9h-8z"/>
+					</svg>
+					QR Generated
+				</a>
 			</div>
 		</div>
 
@@ -75,14 +91,28 @@
 		<div x-data="{ open: {{ request()->routeIs('admin.calendar') || request()->routeIs('admin.appointments') ? 'true' : 'false' }} }" class="mt-1">
 			<button @click="open = !open" class="w-full group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100/80 hover:shadow-sm transition-all">
 				<div class="p-2 rounded-lg group-hover:bg-emerald-100">
-					<i class="fi fi-rr-calendar text-base text-gray-500 group-hover:text-emerald-600"></i>
+					<svg class="w-6 h-6 text-gray-500 group-hover:text-emerald-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+						<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+					</svg>
 				</div>
 				<span class="font-medium">Manage Appointment</span>
-				<i class="fi fi-rr-angle-small-down ml-auto text-gray-400" :class="open ? 'rotate-180' : ''"></i>
+				<svg class="w-5 h-5 ml-auto text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+				</svg>
 			</button>
 			<div x-show="open" x-transition class="ml-12 mt-1 space-y-1">
-				<a href="{{ route('admin.calendar') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.calendar') ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-gray-700 hover:bg-gray-100' }}">Calendar</a>
-				<a href="{{ route('admin.appointments') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.appointments') ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-gray-700 hover:bg-gray-100' }}">Appointment Request</a>
+				<a href="{{ route('admin.calendar') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.calendar') ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-gray-700 hover:bg-gray-100' }}">
+					<svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+						<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+					</svg>
+					Calendar
+				</a>
+				<a href="{{ route('admin.appointments') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.appointments') ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-gray-700 hover:bg-gray-100' }}">
+					<svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+						<path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+					</svg>
+					Appointment Request
+				</a>
 			</div>
 		</div>
 
@@ -93,7 +123,9 @@
 					 ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/25' 
 					 : 'text-gray-700 hover:bg-gray-100/80 hover:shadow-sm hover:translate-x-1' }}">
 			<div class="{{ request()->routeIs('admin.attendance_forms*') ? 'bg-white/20 p-2 rounded-lg' : 'group-hover:bg-cyan-100 p-2 rounded-lg transition-colors' }}">
-				<i class="fi fi-rr-clipboard text-base {{ request()->routeIs('admin.attendance_forms*') ? 'text-white' : 'text-gray-500 group-hover:text-cyan-500' }}"></i>
+				<svg class="w-6 h-6 {{ request()->routeIs('admin.attendance_forms*') ? 'text-white' : 'text-gray-500 group-hover:text-cyan-500' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+				</svg>
 			</div>
 			<span class="font-medium">Attendance Forms</span>
 			@if(request()->routeIs('admin.attendance_forms*'))
@@ -105,7 +137,9 @@
 		<a href="{{ route('admin.logs') }}" 
 		   class="group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 {{ request()->routeIs('admin.logs') ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-white shadow-lg shadow-gray-700/25' : 'text-gray-700 hover:bg-gray-100/80 hover:shadow-sm hover:translate-x-1' }}">
 			<div class="{{ request()->routeIs('admin.logs') ? 'bg-white/20 p-2 rounded-lg' : 'group-hover:bg-gray-200 p-2 rounded-lg transition-colors' }}">
-				<i class="fi fi-rr-document text-base {{ request()->routeIs('admin.logs') ? 'text-white' : 'text-gray-500 group-hover:text-gray-700' }}"></i>
+				<svg class="w-6 h-6 {{ request()->routeIs('admin.logs') ? 'text-white' : 'text-gray-500 group-hover:text-gray-700' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9 9h2v2H9V9zm4 0h2v2h-2V9zM9 13h2v2H9v-2zm4 0h2v2h-2v-2z"/>
+				</svg>
 			</div>
 			<span class="font-medium">System Logs</span>
 		</a>

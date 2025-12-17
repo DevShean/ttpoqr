@@ -1,4 +1,5 @@
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flaticon-uicons/css/uicons-rounded-regular.css">
 
 <!-- Mobile sidebar overlay -->
@@ -49,7 +50,9 @@
                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
                      : 'text-gray-700 hover:bg-gray-100/80 hover:shadow-sm hover:translate-x-1' }}">
             <div class="{{ request()->routeIs('user.home') ? 'bg-white/20 p-2 rounded-lg' : 'group-hover:bg-blue-100 p-2 rounded-lg transition-colors' }}">
-                <i class="fi fi-rr-home text-base {{ request()->routeIs('user.home') ? 'text-white' : 'text-gray-500 group-hover:text-blue-500' }}"></i>
+                <svg class="w-6 h-6 {{ request()->routeIs('user.home') ? 'text-white' : 'text-gray-500 group-hover:text-blue-500' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/>
+                </svg>
             </div>
             <span class="font-medium">Dashboard</span>
             @if(request()->routeIs('user.home'))
@@ -63,7 +66,9 @@
                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
                      : 'text-gray-700 hover:bg-gray-100/80 hover:shadow-sm hover:translate-x-1' }}">
             <div class="{{ request()->routeIs('user.profile') ? 'bg-white/20 p-2 rounded-lg' : 'group-hover:bg-blue-100 p-2 rounded-lg transition-colors' }}">
-                <i class="fi fi-rr-user text-base {{ request()->routeIs('user.profile') ? 'text-white' : 'text-gray-500 group-hover:text-blue-500' }}"></i>
+                <svg class="w-6 h-6 {{ request()->routeIs('user.profile') ? 'text-white' : 'text-gray-500 group-hover:text-blue-500' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
             </div>
             <span class="font-medium">Profile</span>
             @if(request()->routeIs('user.profile'))
@@ -79,7 +84,9 @@
                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25' 
                      : 'text-gray-700 hover:bg-gray-100/80 hover:shadow-sm hover:translate-x-1' }}">
             <div class="{{ request()->routeIs('qr.generate') ? 'bg-white/20 p-2 rounded-lg' : 'group-hover:bg-emerald-100 p-2 rounded-lg transition-colors' }}">
-                <i class="fi fi-rr-qrcode text-base {{ request()->routeIs('qr.generate') ? 'text-white' : 'text-gray-500 group-hover:text-emerald-500' }}"></i>
+                <svg class="w-6 h-6 {{ request()->routeIs('qr.generate') ? 'text-white' : 'text-gray-500 group-hover:text-emerald-500' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zm-10 8h8v8H3v-8zm2 2v4h4v-4H5zm10 0h4v4h-4v-4zm2-2h2v2h-2v-2z"/>
+                </svg>
             </div>
             <span class="font-medium">Generate QR</span>
             @if(request()->routeIs('qr.generate'))
@@ -93,7 +100,9 @@
                      ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25' 
                      : 'text-gray-700 hover:bg-gray-100/80 hover:shadow-sm hover:translate-x-1' }}">
             <div class="{{ request()->routeIs('appointment.show') ? 'bg-white/20 p-2 rounded-lg' : 'group-hover:bg-purple-100 p-2 rounded-lg transition-colors' }}">
-                <i class="fi fi-rr-calendar text-base {{ request()->routeIs('appointment.show') ? 'text-white' : 'text-gray-500 group-hover:text-purple-500' }}"></i>
+                <svg class="w-6 h-6 {{ request()->routeIs('appointment.show') ? 'text-white' : 'text-gray-500 group-hover:text-purple-500' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>
+                </svg>
             </div>
             <span class="font-medium">Request Appointment</span>
             @if(request()->routeIs('appointment.show'))
@@ -104,16 +113,20 @@
 
     <!-- Logout section -->
     <div class="p-4 border-t border-gray-100 bg-gradient-to-r from-white to-gray-50/50">
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('logout') }}" id="logoutForm">
             @csrf
-            <button type="submit" 
-                    class="group w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-[0.98]"
+            <button type="button"
+                    onclick="confirmLogout(event)"
+                    class="group w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 hover:shadow-sm active:scale-[0.98] cursor-pointer"
                     x-data="{ hover: false }"
                     @mouseenter="hover = true"
                     @mouseleave="hover = false">
                 <div class="relative">
                     <div class="p-2 rounded-lg bg-gradient-to-r from-red-500/10 to-red-500/5 group-hover:from-red-500/20 group-hover:to-red-500/10 transition-all">
-                        <i class="fi fi-rr-sign-out text-base text-red-500 group-hover:text-red-600"></i>
+                        <svg class="w-6 h-6 text-red-500 group-hover:text-red-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M5 12c0-.55.45-1 1-1h8V8l4 4-4 4v-3H6c-.55 0-1-.45-1-1z"/>
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+                        </svg>
                     </div>
                     <div x-show="hover" 
                          x-transition:enter="transition ease-out duration-200"
@@ -143,13 +156,33 @@
                     @endif
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">{{ Auth::user()->name ?? 'User' }}</p>
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ (Auth::user()->profile->fname ?? '') . ' ' . (Auth::user()->profile->lname ?? '') ?: Auth::user()->name ?? 'User' }}</p>
                     <p class="text-xs text-gray-500 truncate">{{ Auth::user()->email ?? 'user@example.com' }}</p>
                 </div>
             </div>
         </div>
     </div>
 </aside>
+
+<script>
+function confirmLogout(event) {
+    event.preventDefault();
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'Do you really want to logout?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, logout',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('logoutForm').submit();
+        }
+    });
+}
+</script>
 
 <!-- Add custom scrollbar styles -->
 <style>

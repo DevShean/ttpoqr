@@ -7,7 +7,84 @@
 @section('title', 'Request Appointment')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 p-3 md:p-6" x-data="appointmentCalendar()" x-init="init()">
+<div class="min-h-screen bg-gray-50 p-3 md:p-6">
+    @php
+        $profile = auth()->user()->profile;
+        $emailVerified = auth()->user()->email_verified_at !== null;
+        $profileComplete = $profile && 
+            !empty($profile->fname) && 
+            !empty($profile->lname) && 
+            !empty($profile->contactnum) && 
+            !empty($profile->address) && 
+            !empty($profile->city) && 
+            !empty($profile->state) && 
+            !empty($profile->zip) && 
+            !empty($profile->civil_status) && 
+            !empty($profile->gender);
+    @endphp
+
+    @if(!$profileComplete || !$emailVerified)
+        <!-- Profile Incomplete Overlay -->
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+                <div class="mb-6">
+                    <div class="w-16 h-16 mx-auto bg-yellow-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h2>
+                <p class="text-gray-600 mb-6">Please complete the following requirements to request an appointment.</p>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
+                    <p class="text-sm text-yellow-800 font-medium mb-3">Required:</p>
+                    <ul class="text-sm text-yellow-700 space-y-2">
+                        @if(!$emailVerified)
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                </svg>
+                                Verify your email address
+                            </li>
+                        @else
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Email verified
+                            </li>
+                        @endif
+                        @if(!$profileComplete)
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                </svg>
+                                Complete your profile
+                            </li>
+                            <li class="text-xs ml-6 text-yellow-600 mt-1">First Name & Last Name, Contact Number, Address, City, State, ZIP Code, Civil Status, Gender</li>
+                        @else
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Profile completed
+                            </li>
+                        @endif
+                    </ul>
+                </div>
+
+                <a href="{{ route('user.profile') }}" class="inline-flex items-center justify-center w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Complete Your Profile
+                </a>
+            </div>
+        </div>
+    @else
+        <!-- Calendar Content - Only shown if profile is complete -->
+        <div x-data="appointmentCalendar()" x-init="init()">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
         <div class="mb-6 md:mb-8">
@@ -509,5 +586,7 @@
             }
         }
     </script>
+        </div>
+    @endif
 </div>
 @endsection

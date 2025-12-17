@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\User\QrController;
 use App\Http\Controllers\User\HomeController;
+use App\Http\Controllers\User\UserController as UserUserController;
 use App\Http\Controllers\User\AvailabilityController as UserAvailabilityController;
 use App\Http\Controllers\Admin\AvailabilityController;
 use App\Http\Controllers\Admin\AppointmentController;
@@ -110,6 +111,35 @@ Route::middleware(['web'])->group(function () {
     })->name('appointment.store');
 });
 
+// Email verification routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->name('verification.notice');
+});
+
+// Verification link (can be accessed by anyone via email link)
+Route::get('/email/verify/{id}/{hash}', function (Request $request) {
+    $user = \App\Models\User::findOrFail($request->route('id'));
+    
+    if (!hash_equals((string) $request->route('hash'), sha1($user->getEmailForVerification()))) {
+        return redirect('/')->with('error', 'Invalid verification link');
+    }
+
+    if (!$user->hasVerifiedEmail()) {
+        $user->markEmailAsVerified();
+        event(new \Illuminate\Auth\Events\Verified($user));
+    }
+
+    // If user is logged in and it's their own account, redirect to profile
+    if (Auth::check() && Auth::id() === $user->id) {
+        return redirect('/user/profile')->with('status', 'Email verified successfully!');
+    }
+
+    // Otherwise show success alert and redirect to login
+    return view('auth.verify-success');
+})->name('verification.verify');
+
 // Logout route used by the UI
 Route::post('/logout', function (Request $request) {
     Auth::logout();
@@ -131,7 +161,8 @@ Route::middleware(['web'])->group(function () {
 });
 
 // User availability and appointment requests API (JSON)
-Route::middleware(['web'])->group(function () {
+Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/user/availability', [UserAvailabilityController::class, 'index'])->name('user.availability.index');
     Route::post('/user/appointment-request', [AppointmentRequestController::class, 'store'])->name('user.appointment.store');
+    Route::post('/user/send-verification-email', [UserUserController::class, 'sendVerificationEmail'])->name('user.send-verification');
 });
