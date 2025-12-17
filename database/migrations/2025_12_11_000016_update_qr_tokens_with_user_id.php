@@ -11,12 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('qr_tokens', function (Blueprint $table) {
-            if (!Schema::hasColumn('qr_tokens', 'user_id')) {
-                $table->unsignedBigInteger('user_id')->after('id');
-                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            }
-        });
+        // Already added in initial qr_tokens creation
     }
 
     /**
@@ -24,11 +19,5 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('qr_tokens', function (Blueprint $table) {
-            if (Schema::hasColumn('qr_tokens', 'user_id')) {
-                $table->dropForeign(['user_id']);
-                $table->dropColumn('user_id');
-            }
-        });
     }
 };

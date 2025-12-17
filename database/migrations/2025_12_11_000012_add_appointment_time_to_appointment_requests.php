@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('appointment_requests', function (Blueprint $table) {
-            $table->time('appointment_time')->nullable()->after('purpose');
-        });
+        // Already added in initial appointment_requests creation
     }
 
     /**
@@ -21,8 +19,5 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('appointment_requests', function (Blueprint $table) {
-            $table->dropColumn('appointment_time');
-        });
     }
 };

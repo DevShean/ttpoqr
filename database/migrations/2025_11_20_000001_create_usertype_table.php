@@ -17,6 +17,11 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->string('usertype_name')->nullable();
         });
+
+        // Add foreign key constraint to users table
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('usertype_id')->references('id')->on('usertype')->onDelete('cascade');
+        });
     }
 
     /**
@@ -26,6 +31,9 @@ return new class extends Migration
      */
     public function down()
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['usertype_id']);
+        });
         Schema::dropIfExists('usertype');
     }
 };

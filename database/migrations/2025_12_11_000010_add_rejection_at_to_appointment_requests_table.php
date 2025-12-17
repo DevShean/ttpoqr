@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('appointment_requests', function (Blueprint $table) {
-            $table->timestamp('rejected_at')->nullable()->after('rejection_reason');
-        });
+        // Already added in initial appointment_requests creation
     }
 
     /**
@@ -21,8 +19,5 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('appointment_requests', function (Blueprint $table) {
-            $table->dropColumn('rejected_at');
-        });
     }
 };

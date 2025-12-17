@@ -11,10 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Modify the status column to include 'rejected' instead of 'denied'
-        Schema::table('appointment_requests', function (Blueprint $table) {
-            $table->enum('status', ['pending', 'approved', 'rejected'])->change()->default('pending');
-        });
+        // Already configured in initial appointment_requests creation
     }
 
     /**
@@ -22,8 +19,5 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('appointment_requests', function (Blueprint $table) {
-            $table->enum('status', ['pending', 'approved', 'denied'])->change()->default('pending');
-        });
     }
 };

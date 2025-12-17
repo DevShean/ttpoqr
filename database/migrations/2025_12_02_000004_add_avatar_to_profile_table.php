@@ -7,15 +7,12 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('profile', function (Blueprint $table) {
-            $table->string('avatar_path')->nullable()->after('gender');
-        });
+        // Avatar path is already handled in profile table creation
+        // This is a placeholder for migration history
     }
 
     public function down(): void
     {
-        Schema::table('profile', function (Blueprint $table) {
-            $table->dropColumn('avatar_path');
-        });
+        // No-op
     }
 };

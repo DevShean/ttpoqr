@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('appointment_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('availability_id')->constrained('availabilities')->cascadeOnDelete();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('availability_id');
             $table->enum('purpose', [
                 'Travel Permit',
                 'NBI Certificate',
@@ -27,10 +27,11 @@ return new class extends Migration
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->text('rejection_reason')->nullable();
             $table->timestamp('rejected_at')->nullable();
-            $table->timestamps();
             $table->boolean('is_archived')->default(false);
+            $table->timestamps();
 
-            $table->unique(['user_id', 'availability_id']);
+            // Foreign keys
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 

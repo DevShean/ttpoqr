@@ -12,15 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Use raw SQL to handle the constraint removal
-        // First disable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        
-        // Drop the unique constraint
-        DB::statement('ALTER TABLE appointment_requests DROP INDEX appointment_requests_user_id_availability_id_unique');
-        
-        // Re-enable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        // Unique constraint removed from initial creation
     }
 
     /**
@@ -28,12 +20,5 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
-        
-        Schema::table('appointment_requests', function (Blueprint $table) {
-            $table->unique(['user_id', 'availability_id']);
-        });
-        
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
     }
 };
