@@ -34,6 +34,7 @@ class QrController extends Controller
                             'fname' => $token->user->profile?->fname ?? 'N/A',
                             'mname' => $token->user->profile?->mname ?? '',
                             'lname' => $token->user->profile?->lname ?? '',
+                            'avatar_path' => $token->user->profile?->avatar_path ?? null,
                         ]
                     ]
                 ];

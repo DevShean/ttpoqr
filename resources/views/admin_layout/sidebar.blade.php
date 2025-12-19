@@ -67,8 +67,8 @@
 					</svg>
 				</div>
 				<span class="font-medium">Manage User</span>
-				<svg class="w-5 h-5 ml-auto text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+			<svg class="w-5 h-5 ml-auto text-gray-400 transition-transform" :class="open ? 'rotate-90' : ''" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
 				</svg>
 			</button>
 			<div x-show="open" x-transition class="ml-12 mt-1 space-y-1">
@@ -96,8 +96,8 @@
 					</svg>
 				</div>
 				<span class="font-medium">Manage Appointment</span>
-				<svg class="w-5 h-5 ml-auto text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+			<svg class="w-5 h-5 ml-auto text-gray-400 transition-transform" :class="open ? 'rotate-90' : ''" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
 				</svg>
 			</button>
 			<div x-show="open" x-transition class="ml-12 mt-1 space-y-1">
@@ -156,14 +156,18 @@
 					@mouseleave="hover = false">
 				<div class="relative">
 					<div class="p-2 rounded-lg bg-gradient-to-r from-red-500/10 to-red-500/5 group-hover:from-red-500/20 group-hover:to-red-500/10 transition-all">
-						<i class="fi fi-rr-sign-out text-base text-red-500 group-hover:text-red-600"></i>
+						<svg class="w-6 h-6 text-red-500 group-hover:text-red-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+						</svg>
 					</div>
 					<div x-show="hover" 
 						 x-transition:enter="transition ease-out duration-200"
 						 x-transition:enter-start="opacity-0 scale-95"
 						 x-transition:enter-end="opacity-100 scale-100"
 						 class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
-						<i class="fi fi-rr-exit text-xs text-white"></i>
+						<svg class="w-3.5 h-3.5 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7"/>
+						</svg>
 					</div>
 				</div>
 				<span class="font-medium text-red-600 group-hover:text-red-700">Logout</span>

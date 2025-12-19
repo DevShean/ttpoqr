@@ -150,7 +150,7 @@
                                     d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 0h10.5A2.25 2.25 0 0 1 19.5 12v6a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 18v-6a2.25 2.25 0 0 1 2.25-2.25z" />
                             </svg>
 
-                            <input type="password" name="password" placeholder="Password"
+                            <input type="password" id="password" name="password" placeholder="Password"
                                 class="border border-gray-300 p-3 pl-11 w-full rounded-xl focus:outline-none 
                                 focus:ring-2 focus:ring-[#6a0000]">
                         </div>
@@ -163,9 +163,43 @@
                                     d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 0h10.5A2.25 2.25 0 0 1 19.5 12v6a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 18v-6a2.25 2.25 0 0 1 2.25-2.25z"/>
                             </svg>
 
-                            <input type="password" name="password_confirmation" placeholder="Confirm Password"
+                            <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirm Password"
                                 class="border border-gray-300 p-3 pl-11 w-full rounded-xl focus:outline-none 
                                 focus:ring-2 focus:ring-[#6a0000]">
+                        </div>
+
+                        <!-- Password Strength Meter -->
+                        <div class="space-y-2">
+                            <div class="flex gap-1 h-2">
+                                <div id="strengthBar1" class="flex-1 bg-gray-300 rounded transition-all"></div>
+                                <div id="strengthBar2" class="flex-1 bg-gray-300 rounded transition-all"></div>
+                                <div id="strengthBar3" class="flex-1 bg-gray-300 rounded transition-all"></div>
+                                <div id="strengthBar4" class="flex-1 bg-gray-300 rounded transition-all"></div>
+                            </div>
+                            <p id="strengthText" class="text-xs text-gray-500">Password strength: -</p>
+                        </div>
+
+                        <!-- Password Requirements -->
+                        <div class="bg-gray-100 p-3 rounded-lg space-y-2">
+                            <p class="text-xs font-semibold text-gray-700 mb-2">Password Requirements:</p>
+                            <div id="req-length" class="flex items-center gap-2 text-xs text-gray-600">
+                                <span id="req-length-icon">❌</span>
+                                <span>At least 8 characters</span>
+                            </div>
+                            <div id="req-uppercase" class="flex items-center gap-2 text-xs text-gray-600">
+                                <span id="req-uppercase-icon">❌</span>
+                                <span>One uppercase letter (A-Z)</span>
+                            </div>
+                            <div id="req-symbol" class="flex items-center gap-2 text-xs text-gray-600">
+                                <span id="req-symbol-icon">❌</span>
+                                <span>One symbol (!@#$%^&*)</span>
+                            </div>
+                        </div>
+
+                        <!-- Password Match Status -->
+                        <div id="passwordMatch" class="flex items-center gap-2 text-sm hidden">
+                            <span id="matchIcon">❌</span>
+                            <span id="matchText">Passwords do not match</span>
                         </div>
 
                         <!-- Button -->
@@ -181,11 +215,138 @@
                         (function(){
                             const signupForm = document.getElementById('signupForm');
                             const signupMessage = document.getElementById('signupMessage');
+                            const passwordInput = document.getElementById('password');
+                            const confirmPasswordInput = document.getElementById('password_confirmation');
+                            
                             if (!signupForm) return;
+
+                            // Password validation functions
+                            const validatePassword = (password) => {
+                                return {
+                                    hasLength: password.length >= 8,
+                                    hasUppercase: /[A-Z]/.test(password),
+                                    hasSymbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+                                };
+                            };
+
+                            const updatePasswordRequirements = () => {
+                                const password = passwordInput.value;
+                                const validation = validatePassword(password);
+
+                                // Update requirement indicators
+                                const lengthReq = document.getElementById('req-length');
+                                const uppercaseReq = document.getElementById('req-uppercase');
+                                const symbolReq = document.getElementById('req-symbol');
+
+                                updateRequirement('req-length', validation.hasLength);
+                                updateRequirement('req-uppercase', validation.hasUppercase);
+                                updateRequirement('req-symbol', validation.hasSymbol);
+
+                                // Update password strength
+                                updatePasswordStrength(validation);
+
+                                // Check password match
+                                updatePasswordMatch();
+                            };
+
+                            const updateRequirement = (elementId, isMet) => {
+                                const element = document.getElementById(elementId);
+                                const icon = element.querySelector('span:first-child');
+                                if (isMet) {
+                                    icon.textContent = '✅';
+                                    element.classList.remove('text-gray-600');
+                                    element.classList.add('text-green-600');
+                                } else {
+                                    icon.textContent = '❌';
+                                    element.classList.remove('text-green-600');
+                                    element.classList.add('text-gray-600');
+                                }
+                            };
+
+                            const updatePasswordStrength = (validation) => {
+                                let strength = 0;
+                                if (passwordInput.value.length > 0) {
+                                    if (validation.hasLength) strength++;
+                                    if (validation.hasUppercase) strength++;
+                                    if (validation.hasSymbol) strength++;
+                                    if (passwordInput.value.length >= 12) strength++;
+                                }
+
+                                const bars = ['strengthBar1', 'strengthBar2', 'strengthBar3', 'strengthBar4'];
+                                const colors = ['bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
+                                const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
+
+                                bars.forEach((barId, index) => {
+                                    const bar = document.getElementById(barId);
+                                    if (index < strength) {
+                                        bar.className = `flex-1 ${colors[index]} rounded transition-all`;
+                                    } else {
+                                        bar.className = 'flex-1 bg-gray-300 rounded transition-all';
+                                    }
+                                });
+
+                                const strengthText = document.getElementById('strengthText');
+                                if (strength === 0) {
+                                    strengthText.textContent = 'Password strength: -';
+                                } else {
+                                    strengthText.textContent = `Password strength: ${strengthLabels[strength - 1]}`;
+                                }
+                            };
+
+                            const updatePasswordMatch = () => {
+                                const password = passwordInput.value;
+                                const confirmPassword = confirmPasswordInput.value;
+                                const matchContainer = document.getElementById('passwordMatch');
+                                const matchIcon = document.getElementById('matchIcon');
+                                const matchText = document.getElementById('matchText');
+
+                                if (confirmPassword === '') {
+                                    matchContainer.classList.add('hidden');
+                                    return;
+                                }
+
+                                matchContainer.classList.remove('hidden');
+                                if (password === confirmPassword) {
+                                    matchIcon.textContent = '✅';
+                                    matchText.textContent = 'Passwords match';
+                                    matchContainer.classList.remove('text-red-600');
+                                    matchContainer.classList.add('text-green-600');
+                                } else {
+                                    matchIcon.textContent = '❌';
+                                    matchText.textContent = 'Passwords do not match';
+                                    matchContainer.classList.remove('text-green-600');
+                                    matchContainer.classList.add('text-red-600');
+                                }
+                            };
+
+                            // Event listeners
+                            passwordInput.addEventListener('input', updatePasswordRequirements);
+                            confirmPasswordInput.addEventListener('input', updatePasswordMatch);
 
                             signupForm.addEventListener('submit', async function(e){
                                 e.preventDefault();
                                 signupMessage.innerHTML = '';
+
+                                // Validate password before submission
+                                const password = passwordInput.value;
+                                const confirmPassword = confirmPasswordInput.value;
+                                const validation = validatePassword(password);
+
+                                if (!validation.hasLength || !validation.hasUppercase || !validation.hasSymbol) {
+                                    signupMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">
+                                        <ul class="list-disc pl-5">
+                                            ${!validation.hasLength ? '<li>Password must be at least 8 characters long</li>' : ''}
+                                            ${!validation.hasUppercase ? '<li>Password must contain at least one uppercase letter</li>' : ''}
+                                            ${!validation.hasSymbol ? '<li>Password must contain at least one symbol (!@#$%^&* etc.)</li>' : ''}
+                                        </ul>
+                                    </div>`;
+                                    return;
+                                }
+
+                                if (password !== confirmPassword) {
+                                    signupMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">Passwords do not match</div>`;
+                                    return;
+                                }
 
                                 const formData = new FormData(signupForm);
                                 const payload = {};
@@ -206,6 +367,7 @@
                                         const json = await res.json();
                                         signupMessage.innerHTML = `<div class="mb-4 text-sm text-green-700 bg-green-100 p-3 rounded">${json.message}</div>`;
                                         signupForm.reset();
+                                        document.getElementById('passwordMatch').classList.add('hidden');
                                     } else if (res.status === 422) {
                                         const json = await res.json();
                                         const errors = json.errors || {};
@@ -223,56 +385,6 @@
                                 } catch(err) {
                                     signupMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">Network error. Please try again.</div>`;
                                     console.error(err);
-                                }
-                            });
-                        })();
-                    </script>
-
-                    <script>
-                        (function(){
-                            const loginForm = document.getElementById('loginFormModal');
-                            if (!loginForm) return;
-
-                            loginForm.addEventListener('submit', async function(e){
-                                e.preventDefault();
-                                // optional: simple inline feedback
-                                const submitBtn = loginForm.querySelector('button[type="submit"]');
-                                const originalText = submitBtn.innerText;
-                                submitBtn.disabled = true;
-                                submitBtn.innerText = 'Signing in...';
-
-                                const formData = new FormData(loginForm);
-                                const payload = {};
-                                formData.forEach((v,k)=> payload[k]=v);
-
-                                try {
-                                    const res = await fetch(loginForm.action, {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Accept': 'application/json',
-                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                        },
-                                        body: JSON.stringify(payload),
-                                    });
-
-                                    if (res.ok) {
-                                        const json = await res.json();
-                                        // redirect to returned URL
-                                        window.location.href = json.redirect || '/';
-                                    } else if (res.status === 401) {
-                                        alert('Invalid credentials');
-                                    } else {
-                                        const text = await res.text();
-                                        console.error('Login error', res.status, text);
-                                        alert('Login failed.');
-                                    }
-                                } catch(err) {
-                                    console.error(err);
-                                    alert('Network error');
-                                } finally {
-                                    submitBtn.disabled = false;
-                                    submitBtn.innerText = originalText;
                                 }
                             });
                         })();
@@ -299,6 +411,9 @@
                     <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
                     <form id="loginFormModal" class="flex flex-col gap-4" method="POST" action="{{ route('login') }}">
                         @csrf
+
+                        <!-- Login Message -->
+                        <div id="loginMessage"></div>
 
                         <!-- Email Field -->
                         <div class="relative">
@@ -425,6 +540,68 @@
                 history.replaceState(null, null, " ");
             }
             window.scrollTo({ top: 0, behavior: "instant" });
+
+            // Login form handler
+            (function(){
+                const loginFormModal = document.getElementById('loginFormModal');
+                const loginMessage = document.getElementById('loginMessage');
+                if (!loginFormModal) return;
+
+                loginFormModal.addEventListener('submit', async function(e){
+                    e.preventDefault();
+                    loginMessage.innerHTML = '';
+                    
+                    const submitBtn = loginFormModal.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerText;
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = 'Signing in...';
+
+                    const formData = new FormData(loginFormModal);
+                    const payload = {};
+                    formData.forEach((v,k)=> payload[k]=v);
+
+                    try {
+                        const res = await fetch(loginFormModal.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            },
+                            body: JSON.stringify(payload),
+                        });
+
+                        if (res.ok) {
+                            const json = await res.json();
+                            loginMessage.innerHTML = `<div class="mb-4 text-sm text-green-700 bg-green-100 p-3 rounded">Login successful. Redirecting...</div>`;
+                            setTimeout(() => {
+                                window.location.href = json.redirect || '/';
+                            }, 1000);
+                        } else if (res.status === 401) {
+                            loginMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">Invalid email or password. Please try again.</div>`;
+                        } else if (res.status === 422) {
+                            const json = await res.json();
+                            const errors = json.errors || {};
+                            let list = '<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded"><ul class="list-disc pl-5">';
+                            for (const key in errors) {
+                                errors[key].forEach(msg => { list += `<li>${msg}</li>`; });
+                            }
+                            list += '</ul></div>';
+                            loginMessage.innerHTML = list;
+                        } else {
+                            const text = await res.text();
+                            console.error('Login error', res.status, text);
+                            loginMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">An error occurred (${res.status}). Please try again later.</div>`;
+                        }
+                    } catch(err) {
+                        console.error(err);
+                        loginMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">Network error. Please check your connection and try again.</div>`;
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = originalText;
+                    }
+                });
+            })();
         </script>
 
 

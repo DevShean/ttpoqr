@@ -31,7 +31,7 @@ class AvailabilityController extends Controller
 
         // Get approved appointments that block availability
         $appointmentQuery = AppointmentRequest::where('user_id', Auth::id())
-            ->where('status', '!=', 'rejected')
+            ->where('status', 'approved')
             ->where('is_archived', false)
             ->with('availability');
         
@@ -47,7 +47,17 @@ class AvailabilityController extends Controller
         }
 
         $appointments = $appointmentQuery->get();
-        $appointedDates = $appointments->pluck('availability.date')->map(fn($d) => $d->format('Y-m-d'))->toArray();
+        
+        // Build appointed dates with user information
+        $appointedDates = $appointments->map(function($apt) {
+            $user = $apt->user;
+            $fullName = trim(($user->profile?->fname ?? '') . ' ' . ($user->profile?->lname ?? ''));
+            return [
+                'date' => $apt->availability->date->format('Y-m-d'),
+                'userName' => $fullName ?: 'Unknown User',
+                'status' => $apt->status
+            ];
+        })->toArray();
 
         return response()->json([
             'availabilities' => $availabilities,

@@ -78,7 +78,7 @@ class AppointmentController extends Controller
             $query->orderBy('created_at', 'DESC');
         }
 
-        $appointments = $query->paginate(15);
+        $appointments = $query->paginate(20);
 
         // Get unique purposes for filter dropdown
         $purposes = AppointmentRequest::distinct()->pluck('purpose');

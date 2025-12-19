@@ -72,12 +72,32 @@
                 <p class="text-gray-600">Loading active tokens...</p>
             </div>
         </div>
+        
+        <!-- Pagination -->
+        <div id="paginationContainer" class="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div class="text-sm text-gray-600">
+                Showing <span id="pageInfo">0</span> tokens
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="prevBtn" onclick="previousPage()" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fi fi-rr-arrow-small-left mr-1"></i>Previous
+                </button>
+                <div id="pageNumbers" class="flex items-center gap-1"></div>
+                <button id="nextBtn" onclick="nextPage()" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next<i class="fi fi-rr-arrow-small-right ml-1"></i>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
     let refreshInterval = null;
     const ttlSeconds = 60;
+    let currentPage = 1;
+    let totalPages = 1;
+    let allTokensData = null;
+    const tokensPerPage = 10;
 
     function initLiveView() {
         loadTokens();
@@ -99,8 +119,17 @@
             return r.json();
         })
         .then(data => {
+            allTokensData = data;
+            totalPages = Math.ceil(data.tokens.length / tokensPerPage);
+            if (currentPage > totalPages && totalPages > 0) {
+                currentPage = totalPages;
+            }
+            if (currentPage < 1) {
+                currentPage = 1;
+            }
             renderTokens(data);
             updateStats(data);
+            updatePaginationControls();
         })
         .catch(error => {
             console.error('Error loading tokens:', error);
@@ -133,7 +162,16 @@
             return;
         }
 
-        container.innerHTML = data.tokens.map(token => {
+        // Paginate tokens
+        const startIndex = (currentPage - 1) * tokensPerPage;
+        const endIndex = startIndex + tokensPerPage;
+        const paginatedTokens = data.tokens.slice(startIndex, endIndex);
+
+        // Update page info
+        const totalShowing = Math.min(tokensPerPage, data.tokens.length - startIndex);
+        document.getElementById('pageInfo').textContent = `${startIndex + 1}-${startIndex + totalShowing} of ${data.tokens.length}`;
+
+        container.innerHTML = paginatedTokens.map(token => {
             const timeRemaining = token.expires_at - currentTime;
             const isExpired = timeRemaining <= 0 || token.status === 'expired';
             const isUsed = token.status === 'used';
@@ -198,6 +236,67 @@
                 </div>
             `;
         }).join('');
+    }
+
+    function updatePaginationControls() {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const pageNumbers = document.getElementById('pageNumbers');
+
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+
+        // Generate page numbers
+        let pageHtml = '';
+        const maxPagesToShow = 5;
+        const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+        const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+        if (startPage > 1) {
+            pageHtml += `<button onclick="goToPage(1)" class="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">1</button>`;
+            if (startPage > 2) {
+                pageHtml += `<span class="px-2 text-gray-500">...</span>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                pageHtml += `<button class="px-2.5 py-1 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded">${i}</button>`;
+            } else {
+                pageHtml += `<button onclick="goToPage(${i})" class="px-2.5 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">${i}</button>`;
+            }
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                pageHtml += `<span class="px-2 text-gray-500">...</span>`;
+            }
+            pageHtml += `<button onclick="goToPage(${totalPages})" class="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">${totalPages}</button>`;
+        }
+
+        pageNumbers.innerHTML = pageHtml;
+    }
+
+    function previousPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderTokens(allTokensData);
+            updatePaginationControls();
+        }
+    }
+
+    function nextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderTokens(allTokensData);
+            updatePaginationControls();
+        }
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        renderTokens(allTokensData);
+        updatePaginationControls();
     }
 
     function formatTime(seconds) {

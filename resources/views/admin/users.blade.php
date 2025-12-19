@@ -103,9 +103,15 @@
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="px-4 md:px-6 py-3 md:py-4">
                                     <div class="flex items-center gap-2 md:gap-3">
-                                        <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-xs md:text-sm flex-shrink-0">
-                                            {{ substr($user->profile->fname ?? $user->email, 0, 1) }}
-                                        </div>
+                                        @if($user->profile && $user->profile->avatar_path)
+                                            <img src="{{ asset('storage/' . $user->profile->avatar_path) }}" 
+                                                 alt="{{ $user->profile->fname ?? $user->email }}" 
+                                                 class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover flex-shrink-0 border border-gray-200">
+                                        @else
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-xs md:text-sm flex-shrink-0">
+                                                {{ substr($user->profile->fname ?? $user->email, 0, 1) }}
+                                            </div>
+                                        @endif
                                         <div class="min-w-0">
                                             <p class="font-medium text-gray-900 text-xs md:text-sm truncate">
                                                 @if($user->profile)
@@ -163,9 +169,15 @@
                 @foreach($users as $user)
                     <div class="p-4 space-y-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                                {{ substr($user->profile->fname ?? $user->email, 0, 1) }}
-                            </div>
+                            @if($user->profile && $user->profile->avatar_path)
+                                <img src="{{ asset('storage/' . $user->profile->avatar_path) }}" 
+                                     alt="{{ $user->profile->fname ?? $user->email }}" 
+                                     class="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-200">
+                            @else
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                    {{ substr($user->profile->fname ?? $user->email, 0, 1) }}
+                                </div>
+                            @endif
                             <div class="min-w-0 flex-1">
                                 <p class="font-medium text-gray-900 text-sm truncate">
                                     @if($user->profile)

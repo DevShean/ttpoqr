@@ -194,9 +194,15 @@
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="px-4 md:px-6 py-3 md:py-4">
                                     <div class="flex items-center gap-2 md:gap-3">
-                                        <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-xs md:text-sm flex-shrink-0">
-                                            {{ substr($appointment->user->profile->fname ?? 'U', 0, 1) }}
-                                        </div>
+                                        @if($appointment->user->profile && $appointment->user->profile->avatar_path)
+                                            <img src="{{ asset('storage/' . $appointment->user->profile->avatar_path) }}" 
+                                                 alt="{{ $appointment->user->profile->fname }}" 
+                                                 class="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                                        @else
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-xs md:text-sm flex-shrink-0">
+                                                {{ substr($appointment->user->profile->fname ?? 'U', 0, 1) }}
+                                            </div>
+                                        @endif
                                         <div class="min-w-0">
                                             <p class="font-medium text-gray-900 text-xs md:text-sm truncate">
                                                 @if($appointment->user->profile)
@@ -286,9 +292,15 @@
                 @foreach($appointments as $appointment)
                     <div class="p-4 space-y-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                                {{ substr($appointment->user->profile->fname ?? 'U', 0, 1) }}
-                            </div>
+                            @if($appointment->user->profile && $appointment->user->profile->avatar_path)
+                                <img src="{{ asset('storage/' . $appointment->user->profile->avatar_path) }}" 
+                                     alt="{{ $appointment->user->profile->fname }}" 
+                                     class="w-10 h-10 rounded-full object-cover border border-gray-200 flex-shrink-0">
+                            @else
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                    {{ substr($appointment->user->profile->fname ?? 'U', 0, 1) }}
+                                </div>
+                            @endif
                             <div class="min-w-0 flex-1">
                                 <p class="font-medium text-gray-900 text-sm truncate">
                                     @if($appointment->user->profile)
@@ -366,47 +378,41 @@
             </div>
 
             <!-- Pagination -->
-            <div class="px-4 sm:px-6 py-4 sm:py-6 border-t border-gray-200 overflow-x-auto">
-                <style>
-                    .pagination { 
-                        display: flex; 
-                        justify-content: center; 
-                        gap: 0.25rem;
-                        flex-wrap: wrap;
-                    }
-                    .pagination a, 
-                    .pagination span {
-                        padding: 0.5rem 0.75rem;
-                        font-size: 0.875rem;
-                        border: 1px solid #e5e7eb;
-                        border-radius: 0.5rem;
-                        text-decoration: none;
-                        transition: all 0.2s;
-                    }
-                    .pagination a:hover {
-                        background-color: #eff6ff;
-                        border-color: #3b82f6;
-                        color: #3b82f6;
-                    }
-                    .pagination span.active {
-                        background-color: #3b82f6;
-                        color: white;
-                        border-color: #3b82f6;
-                    }
-                    .pagination span:disabled,
-                    .pagination span.disabled {
-                        color: #9ca3af;
-                        cursor: not-allowed;
-                    }
-                    @media (max-width: 640px) {
-                        .pagination a, 
-                        .pagination span {
-                            padding: 0.375rem 0.5rem;
-                            font-size: 0.75rem;
-                        }
-                    }
-                </style>
-                {{ $appointments->links() }}
+            <div class="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+                <div class="text-sm text-gray-600">
+                    Showing <span>{{ $appointments->firstItem() ?? 0 }}-{{ $appointments->lastItem() ?? 0 }}</span> of <span>{{ $appointments->total() }}</span> appointments
+                </div>
+                <div class="flex items-center gap-2">
+                    @if($appointments->onFirstPage())
+                        <button disabled class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fi fi-rr-arrow-small-left mr-1"></i>Previous
+                        </button>
+                    @else
+                        <a href="{{ $appointments->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <i class="fi fi-rr-arrow-small-left mr-1"></i>Previous
+                        </a>
+                    @endif
+                    
+                    <div class="flex items-center gap-1">
+                        @foreach($appointments->getUrlRange(1, $appointments->lastPage()) as $page => $url)
+                            @if($page == $appointments->currentPage())
+                                <button class="px-2.5 py-1 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded">{{ $page }}</button>
+                            @else
+                                <a href="{{ $url }}" class="px-2.5 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">{{ $page }}</a>
+                            @endif
+                        @endforeach
+                    </div>
+                    
+                    @if($appointments->hasMorePages())
+                        <a href="{{ $appointments->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            Next<i class="fi fi-rr-arrow-small-right ml-1"></i>
+                        </a>
+                    @else
+                        <button disabled class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                            Next<i class="fi fi-rr-arrow-small-right ml-1"></i>
+                        </button>
+                    @endif
+                </div>
             </div>
         @else
             <div class="px-4 sm:px-6 py-8 sm:py-12 text-center">
@@ -456,6 +462,18 @@
             },
             submitApprove(id, userName, appointmentTime) {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                // Show loading alert
+                Swal.fire({
+                    title: 'Approving Appointment',
+                    html: 'Sending approval email and updating appointment...',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
                 
                 fetch(`/admin/appointments/${id}/approve`, {
                     method: 'POST',
@@ -517,6 +535,18 @@
             },
             submitReject(id, userName, reason) {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                // Show loading alert
+                Swal.fire({
+                    title: 'Rejecting Appointment',
+                    html: 'Sending rejection email and updating appointment...',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
                 
                 fetch(`/admin/appointments/${id}/reject`, {
                     method: 'POST',
