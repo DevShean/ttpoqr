@@ -30,13 +30,13 @@
                     <div class="text-center mb-6">
                         <div class="relative inline-block">
                             @php
-                                $avatarUrl = !empty($profile?->avatar_path)
+                                $avatarUrl = (!empty($profile?->avatar_path) && file_exists(storage_path('app/public/' . $profile->avatar_path)))
                                     ? Storage::url($profile->avatar_path)
                                     : asset('assets/img/default_pfp.jpg');
                                 $avatarVer = ($profile?->updated_at ? $profile->updated_at->timestamp : time());
                             @endphp
                             <div class="w-40 h-40 rounded-full overflow-hidden mx-auto border-4 border-white shadow-lg">
-                                <img src="{{ $avatarUrl }}?v={{ $avatarVer }}" alt="Profile Photo" class="w-full h-full object-cover" id="avatarPreview" />
+                                <img src="{{ $avatarUrl }}?v={{ $avatarVer }}" alt="Profile Photo" class="w-full h-full object-cover" id="avatarPreview" onerror="this.src='{{ asset('assets/img/default_pfp.jpg') }}'" />
                             </div>
                             <div class="absolute bottom-2 right-2 bg-blue-500 rounded-full p-2 shadow-lg">
                                 <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -53,25 +53,6 @@
 
                     {{-- Upload Section --}}
                     <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Update Profile Photo</label>
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-blue-400 transition-colors duration-200">
-                                <div class="space-y-1 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                    <div class="flex text-sm text-gray-600">
-                                        <label class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
-                                            <span>Upload a file</span>
-                                            <input type="file" name="avatar" accept="image/*" class="sr-only" id="avatarInput" form="profileForm" />
-                                        </label>
-                                        <p class="pl-1">or drag and drop</p>
-                                    </div>
-                                    <p class="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
-                                </div>
-                            </div>
-                        </div>
-
                         {{-- Quick Stats --}}
                         <div class="pt-6 border-t border-gray-100">
                             <h3 class="text-sm font-medium text-gray-900 mb-4">Profile Completion</h3>
@@ -106,6 +87,26 @@
                     @if(isset($profile))
                         @method('PUT')
                     @endif
+
+                    {{-- Avatar Upload Card (moved inside form) --}}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Profile Photo</h3>
+                        <div class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-blue-400 transition-colors duration-200">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <div class="flex text-sm text-gray-600">
+                                    <label class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
+                                        <span>Upload a file</span>
+                                        <input type="file" name="avatar" accept="image/*" class="sr-only" id="avatarInput" />
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
+                            </div>
+                        </div>
+                    </div>
 
                     {{-- Personal Information Card --}}
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -158,7 +159,7 @@
                                         Contact Number
                                         <span class="text-red-500">*</span>
                                     </label>
-                                    <div class="flex gap-2">
+                                    <div class="flex flex-col sm:flex-row gap-2">
                                         <input type="tel" 
                                                name="contactnum" 
                                                value="{{ old('contactnum', $profile->contactnum ?? '') }}"
@@ -170,7 +171,7 @@
                                                required 
                                                onkeydown="return /[0-9]/.test(event.key) || ['Backspace','Delete','ArrowLeft','ArrowRight','Tab'].includes(event.key)" />
                                         <button type="button"
-                                                class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium rounded-lg shadow-sm hover:from-emerald-700 hover:to-emerald-800 transition duration-200 flex items-center whitespace-nowrap">
+                                                class="px-4 py-3 sm:px-6 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium rounded-lg shadow-sm hover:from-emerald-700 hover:to-emerald-800 transition duration-200 flex items-center justify-center sm:justify-start">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948.684l1.498 4.493a1 1 0 00.502.756l2.048 1.029a1 1 0 00.502.756l2.048 1.029a1 1 0 001.386-.27l1.498-4.493a1 1 0 00-.948-1.684H19a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"/>
                                             </svg>
@@ -234,22 +235,24 @@
                                     @php
                                         $emailVerified = auth()->user()->email_verified_at;
                                     @endphp
-                                    <input type="email" 
-                                           name="email"
-                                           value="{{ auth()->user()->email ?? '' }}" 
-                                           {{ $emailVerified ? 'readonly' : '' }}
-                                           class="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 {{ $emailVerified ? 'bg-gray-50 text-gray-600' : '' }}" />
-                                    @if(!$emailVerified)
-                                        <button type="button" onclick="sendVerificationEmail()"
-                                                id="verifyEmailBtn"
-                                                class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 transition duration-200 flex items-center whitespace-nowrap">
-                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                            </svg>
-                                            <span id="verifyBtnText">Verify Email</span>
-                                        </button>
-                                    @endif
-                                </div>
+                                    <div class="flex flex-col sm:flex-row gap-2">
+                                        <input type="email" 
+                                               name="email"
+                                               readonly
+                                               value="{{ auth()->user()->email ?? '' }}" 
+                                               {{ $emailVerified ? 'readonly' : '' }}
+                                               class="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 {{ $emailVerified ? 'bg-gray-50 text-gray-600' : '' }}" />
+                                        @if(!$emailVerified)
+                                            <button type="button" onclick="sendVerificationCode()"
+                                                    id="verifyEmailBtn"
+                                                    class="px-4 py-3 sm:px-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg shadow-sm hover:from-blue-700 hover:to-blue-800 transition duration-200 flex items-center justify-center sm:justify-start">
+                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                                </svg>
+                                                <span id="verifyBtnText">Send Code</span>
+                                            </button>
+                                        @endif
+                                    </div>
                             </div>
                             <div class="pt-2">
                                 <div class="flex items-center gap-2 p-3 rounded-lg {{ $emailVerified ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200' }}">
@@ -364,11 +367,24 @@
             const avatarPreview = document.getElementById('avatarPreview');
             const dropArea = document.querySelector('.border-dashed');
             const statusAlert = document.getElementById('statusAlert');
+            const profileForm = document.getElementById('profileForm');
+
+            // Add form submission logging
+            if (profileForm) {
+                profileForm.addEventListener('submit', function(e) {
+                    console.log('Form submitted');
+                    console.log('Avatar input files:', avatarInput?.files?.length);
+                    if (avatarInput?.files?.length > 0) {
+                        console.log('Avatar file:', avatarInput.files[0].name);
+                    }
+                });
+            }
 
             if (avatarInput && avatarPreview) {
                 avatarInput.addEventListener('change', function(e) {
                     const file = e.target.files && e.target.files[0];
                     if (file) {
+                        console.log('Avatar file selected:', file.name, 'Size:', file.size);
                         const reader = new FileReader();
                         reader.onload = function(ev) {
                             avatarPreview.src = ev.target.result;
@@ -436,7 +452,161 @@
             }
         });
 
-        // Email verification function
+        // Email verification with 4-digit code
+        window.sendVerificationCode = function() {
+            const btn = document.getElementById('verifyEmailBtn');
+            const btnText = document.getElementById('verifyBtnText');
+            const originalText = btnText.textContent;
+            
+            btn.disabled = true;
+            btnText.textContent = 'Sending...';
+            
+            fetch('/user/send-verification-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                }
+            })
+            .then(r => {
+                if (!r.ok) {
+                    if (r.status === 429) {
+                        return r.json().then(data => {
+                            throw new Error(data.message || 'Please wait before requesting another code');
+                        });
+                    }
+                    throw new Error('Failed to send verification code');
+                }
+                return r.json();
+            })
+            .then(data => {
+                showVerificationCodeModal();
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                Swal.fire({
+                    title: 'Error!',
+                    text: err.message || 'Failed to send verification code. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444'
+                });
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btnText.textContent = originalText;
+            });
+        }
+
+        // Show verification code modal
+        window.showVerificationCodeModal = function() {
+            Swal.fire({
+                title: 'Enter Verification Code',
+                text: 'A 4-digit code has been sent to your email. Please enter it below.',
+                icon: 'info',
+                html: `
+                    <div style="margin: 20px 0;">
+                        <input type="text" id="codeInput" class="swal2-input" placeholder="0000" maxlength="4" inputmode="numeric" style="text-align: center; font-size: 24px; letter-spacing: 12px; font-weight: bold;" />
+                    </div>
+                `,
+                allowOutsideClick: false,
+                allowEscapeKey: true,
+                confirmButtonText: 'Verify Code',
+                confirmButtonColor: '#3B82F6',
+                didOpen: () => {
+                    const input = document.getElementById('codeInput');
+                    input.focus();
+                    // Only allow numbers
+                    input.addEventListener('keypress', function(e) {
+                        if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                        }
+                    });
+                    input.addEventListener('input', function(e) {
+                        this.value = this.value.replace(/[^0-9]/g, '');
+                    });
+                },
+                preConfirm: () => {
+                    const code = document.getElementById('codeInput').value;
+                    if (!code) {
+                        Swal.showValidationMessage('Please enter the verification code');
+                        return false;
+                    }
+                    if (code.length !== 4) {
+                        Swal.showValidationMessage('Code must be exactly 4 digits');
+                        return false;
+                    }
+                    return code;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    verifyCode(result.value);
+                }
+            });
+        }
+
+        // Verify the 4-digit code
+        window.verifyCode = function(code) {
+            Swal.fire({
+                title: 'Verifying...',
+                text: 'Please wait while we verify your code.',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: (modal) => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch('/user/verify-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                body: JSON.stringify({
+                    code: code
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.message && (data.message.includes('verified successfully') || data.message.includes('already verified'))) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Your email has been verified successfully!',
+                        icon: 'success',
+                        confirmButtonColor: '#3B82F6'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Invalid Code',
+                        text: data.message || 'The code you entered is invalid or has expired. Please try again.',
+                        icon: 'error',
+                        confirmButtonColor: '#EF4444',
+                        confirmButtonText: 'Try Again'
+                    }).then(() => {
+                        showVerificationCodeModal();
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An error occurred while verifying the code. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444',
+                    confirmButtonText: 'Try Again'
+                }).then(() => {
+                    showVerificationCodeModal();
+                });
+            });
+        }
+
+        // Email verification function (old method - kept for compatibility)
         window.sendVerificationEmail = function() {
             const btn = document.getElementById('verifyEmailBtn');
             const btnText = document.getElementById('verifyBtnText');

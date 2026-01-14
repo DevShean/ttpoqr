@@ -41,27 +41,36 @@ class ProfileController extends Controller
             'zip' => 'nullable|string|max:20',
             'civil_status' => 'nullable|in:Single,Married,Widowed,Annulled,Legally Separated',
             'gender' => 'nullable|in:Male,Female,Other',
-            'avatar' => 'nullable|image|max:2048',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $data['user_id'] = $user->id;
 
         $profile = Profile::where('user_id', $user->id)->first();
+        
         // Handle avatar upload
-        if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            $path = $file->store('profile_avatars', 'public');
-            // Delete old avatar if exists
-            if ($profile && $profile->avatar_path) {
-                \Storage::disk('public')->delete($profile->avatar_path);
+        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+            try {
+                $file = $request->file('avatar');
+                // Generate a unique filename
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('profile_avatars', $filename, 'public');
+                
+                // Delete old avatar if exists
+                if ($profile && $profile->avatar_path) {
+                    \Storage::disk('public')->delete($profile->avatar_path);
+                }
+                
+                $data['avatar_path'] = $path;
+            } catch (\Exception $e) {
+                return redirect()->route('user.profile')->with('error', 'Failed to upload avatar: ' . $e->getMessage());
             }
-            $data['avatar_path'] = $path;
         }
 
         // create or update
         $profile = Profile::updateOrCreate(['user_id' => $user->id], $data);
 
-        return redirect()->route('user.profile')->with('status', 'Profile saved.');
+        return redirect()->route('user.profile')->with('status', 'Profile saved successfully.');
     }
 
     /** Update existing profile */

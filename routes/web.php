@@ -165,4 +165,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/user/availability', [UserAvailabilityController::class, 'index'])->name('user.availability.index');
     Route::post('/user/appointment-request', [AppointmentRequestController::class, 'store'])->name('user.appointment.store');
     Route::post('/user/send-verification-email', [UserUserController::class, 'sendVerificationEmail'])->name('user.send-verification');
+    Route::post('/user/send-verification-code', [UserUserController::class, 'sendVerificationCode'])->name('user.send-verification-code');
+    Route::post('/user/verify-code', [UserUserController::class, 'verifyCode'])->name('user.verify-code');
 });

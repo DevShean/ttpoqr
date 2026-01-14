@@ -50,7 +50,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @foreach($forms as $form)
-                            <tr class="hover:bg-gray-50 transition">
+                            <tr class="hover:bg-gray-50 transition" data-form-id="{{ $form->id }}">
                                 <td class="px-4 md:px-6 py-3 md:py-4">
                                     <p class="text-xs md:text-sm font-medium text-gray-900">{{ $form->date->format('M d, Y') }}</p>
                                 </td>
@@ -86,7 +86,7 @@
             <!-- Mobile Card View -->
             <div class="sm:hidden divide-y divide-gray-200">
                 @foreach($forms as $form)
-                    <div class="p-4 space-y-3">
+                    <div class="p-4 space-y-3" data-form-id="{{ $form->id }}">
                         <div class="flex justify-between items-start gap-3">
                             <div class="flex-1 min-w-0">
                                 <p class="text-xs text-gray-500 uppercase tracking-wide">Date</p>
@@ -145,16 +145,84 @@
         }).then(result => {
             if (result.isConfirmed) {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                Swal.fire({
+                    title: 'Deleting...',
+                    didOpen: (modal) => {
+                        Swal.showLoading();
+                    },
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+                
                 fetch(`/admin/attendance-forms/${formId}`, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 })
-                .then(r => r.json())
-                .then(() => {
-                    window.location.reload();
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response ok:', response.ok);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Delete response:', data);
+                    console.log('Response data type:', typeof data);
+                    console.log('Response data success:', data.success);
+                    
+                    if (!data.success) {
+                        throw new Error(data.message || 'Delete failed');
+                    }
+                    const formRow = document.querySelector(`[data-form-id="${formId}"]`);
+                    if (formRow) {
+                        // Fade out and remove
+                        formRow.style.opacity = '0';
+                        formRow.style.transition = 'opacity 0.3s ease-out';
+                        setTimeout(() => {
+                            formRow.remove();
+                            
+                            // Check if there are any forms left
+                            const formsCards = document.querySelectorAll('[data-form-id]');
+                            
+                            if (formsCards.length === 0) {
+                                // If no forms left, reload to show empty state
+                                window.location.reload();
+                            } else {
+                                // Show success message
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: 'Attendance form has been deleted.',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        }, 300);
+                    } else {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: 'Attendance form has been deleted.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    console.error('Error message:', error.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Failed to delete the form. ' + error.message
+                    });
                 });
             }
         });

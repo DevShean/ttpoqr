@@ -86,6 +86,7 @@
         <!-- Calendar Content - Only shown if profile is complete -->
         <div x-data="appointmentCalendar()" x-init="init()">
     <div class="max-w-7xl mx-auto">
+
         <!-- Header -->
         <div class="mb-6 md:mb-8">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -187,7 +188,8 @@
                             'hover:scale-[1.02] active:scale-95 transition-transform duration-150': cell.inMonth && cell.available && !cell.hasRequest && !cell.onCooldown,
                             'bg-emerald-50 border-2 border-emerald-200 hover:border-emerald-300': cell.inMonth && cell.available && !cell.hasRequest && !cell.onCooldown,
                             'bg-red-50 border-2 border-red-200': cell.inMonth && !cell.available,
-                            'bg-yellow-50 border-2 border-yellow-200': cell.inMonth && cell.available && cell.hasRequest,
+                            'bg-yellow-50 border-2 border-yellow-200': cell.inMonth && cell.requestStatus === 'pending',
+                            'bg-green-50 border-2 border-green-200': cell.inMonth && cell.requestStatus === 'approved',
                             'bg-blue-50 border-2 border-blue-200': cell.inMonth && cell.onCooldown,
                             'bg-gray-50 border border-gray-200': !cell.inMonth
                         }"
@@ -197,7 +199,8 @@
                               :class="{
                                 'text-emerald-700': cell.inMonth && cell.available && !cell.hasRequest && !cell.onCooldown,
                                 'text-red-700': cell.inMonth && !cell.available,
-                                'text-yellow-700': cell.inMonth && cell.available && cell.hasRequest,
+                                'text-yellow-700': cell.inMonth && cell.requestStatus === 'pending',
+                                'text-green-700': cell.inMonth && cell.requestStatus === 'approved',
                                 'text-blue-700': cell.inMonth && cell.onCooldown,
                                 'text-gray-400': !cell.inMonth
                               }"
@@ -212,10 +215,11 @@
                                           :class="{
                                               'text-emerald-600': cell.available && !cell.hasRequest && !cell.onCooldown,
                                               'text-red-600': !cell.available,
-                                              'text-yellow-600': cell.available && cell.hasRequest,
+                                              'text-yellow-600': cell.requestStatus === 'pending',
+                                              'text-green-600': cell.requestStatus === 'approved',
                                               'text-blue-600': cell.onCooldown
                                           }"
-                                          x-text="cell.onCooldown ? (Math.ceil(cell.cooldownRemaining / 60) + 'm') : (cell.available && !cell.hasRequest ? 'Available' : (!cell.available ? 'Unavailable' : 'Requested'))">
+                                          x-text="cell.onCooldown ? (Math.ceil(cell.cooldownRemaining / 60) + 'm') : (cell.available && !cell.hasRequest ? 'Available' : (!cell.available ? 'Unavailable' : (cell.requestStatus === 'approved' ? 'Approved' : 'Requested')))">
                                     </span>
                                     <span class="md:hidden">
                                         <svg x-show="cell.available && !cell.hasRequest && !cell.onCooldown" class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
@@ -224,8 +228,11 @@
                                         <svg x-show="!cell.available" class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
                                         </svg>
-                                        <svg x-show="cell.available && cell.hasRequest && !cell.onCooldown" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <svg x-show="cell.requestStatus === 'pending'" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <svg x-show="cell.requestStatus === 'approved'" class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                         </svg>
                                         <svg x-show="cell.onCooldown" class="w-4 h-4 text-blue-500 animate-spin" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 1114.869 2.7c-.75.438-1.338 1.04-1.447 1.741-.111.712.821 1.469 1.829 1.469.556 0 1-.449 1-1.002A9 9 0 006 3a1 1 0 01-1-1z" clip-rule="evenodd"/>
@@ -255,7 +262,11 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="w-4 h-4 rounded bg-yellow-50 border-2 border-yellow-300"></div>
-                        <span>Already Requested</span>
+                        <span>Pending Request</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded bg-green-50 border-2 border-green-300"></div>
+                        <span>Approved</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <div class="w-4 h-4 rounded bg-blue-50 border-2 border-blue-300"></div>
@@ -282,6 +293,7 @@
                 availableCount: 0,
                 status: '',
                 cooldowns: {}, // Track cooldown timers
+                approvedRequest: null, // Track approved request
                 init() {
                     console.log('Appointment calendar initializing...');
                     this.build();
@@ -314,6 +326,7 @@
                             inMonth: false,
                             available: false,
                             hasRequest: false,
+                            requestStatus: null,
                             onCooldown: false,
                             cooldownRemaining: 0
                         });
@@ -332,6 +345,7 @@
                             inMonth: true,
                             available: false,  // Default to unavailable until confirmed from database
                             hasRequest: false,
+                            requestStatus: null, // 'pending' or 'approved'
                             onCooldown: false,
                             cooldownRemaining: 0
                         });
@@ -349,6 +363,7 @@
                             inMonth: false,
                             available: false,
                             hasRequest: false,
+                            requestStatus: null,
                             onCooldown: false,
                             cooldownRemaining: 0
                         });
@@ -389,6 +404,64 @@
                             ])
                         );
 
+                        // Separate maps for pending and approved
+                        const pendingMap = new Map(data.requests
+                            .filter(i => i.status === 'pending')
+                            .map(i => [
+                                i.availability.date.split('T')[0],
+                                true
+                            ])
+                        );
+
+                        const approvedMap = new Map(data.requests
+                            .filter(i => i.status === 'approved')
+                            .map(i => [
+                                i.availability.date.split('T')[0],
+                                true
+                            ])
+                        );
+
+                        // Check for approved requests
+                        const approvedRequests = data.requests.filter(i => i.status === 'approved');
+                        if (approvedRequests.length > 0) {
+                            const approvedRequest = approvedRequests[0];
+                            const appointmentDate = new Date(approvedRequest.availability.date);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            
+                            // Only show alert if the appointment date hasn't passed
+                            if (appointmentDate >= today) {
+                                const approvedDate = appointmentDate.toLocaleDateString(undefined, {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                });
+                                const approvedTime = approvedRequest.appointment_time || 'TBA';
+                                
+                                this.approvedRequest = {
+                                    date: approvedDate,
+                                    time: approvedTime
+                                };
+
+                                // Show SweetAlert for approved request
+                                Swal.fire({
+                                    title: 'Request Approved!',
+                                    html: `
+                                        <p class="text-gray-700 mb-4">Your appointment request has been approved.</p>
+                                        <div class="text-left bg-gray-50 rounded-lg p-4 mb-4">
+                                            <p class="text-sm text-gray-700 mb-2"><strong>Date:</strong> ${approvedDate}</p>
+                                            <p class="text-sm text-gray-700"><strong>Time:</strong> ${approvedTime}</p>
+                                        </div>
+                                        <p class="text-sm text-gray-600">Please check your email for more details.</p>
+                                    `,
+                                    icon: 'success',
+                                    confirmButtonColor: '#10B981',
+                                    confirmButtonText: 'Got it!'
+                                });
+                            }
+                        }
+
                         // Build cooldown map
                         const cooldownMap = new Map();
                         if (data.rejectedDates) {
@@ -397,13 +470,21 @@
                             }
                         }
 
-                        this.cells = this.cells.map(c => ({
-                            ...c,
-                            available: availabilityMap.has(c.date) ? availabilityMap.get(c.date) : c.available,
-                            hasRequest: requestMap.has(c.date) || false,
-                            onCooldown: cooldownMap.has(c.date) ? cooldownMap.get(c.date).on_cooldown : false,
-                            cooldownRemaining: cooldownMap.has(c.date) ? cooldownMap.get(c.date).cooldown_remaining_seconds : 0
-                        }));
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        this.cells = this.cells.map(c => {
+                            const cellDate = new Date(c.date);
+                            const isPast = cellDate < today;
+                            return {
+                                ...c,
+                                available: isPast ? false : (availabilityMap.has(c.date) ? availabilityMap.get(c.date) : c.available),
+                                hasRequest: requestMap.has(c.date) || false,
+                                requestStatus: approvedMap.has(c.date) ? 'approved' : (pendingMap.has(c.date) ? 'pending' : null),
+                                onCooldown: cooldownMap.has(c.date) ? cooldownMap.get(c.date).on_cooldown : false,
+                                cooldownRemaining: cooldownMap.has(c.date) ? cooldownMap.get(c.date).cooldown_remaining_seconds : 0
+                            };
+                        });
 
                         this.updateCounts();
                         this.applyFilter();

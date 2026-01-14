@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Traits\LogsAdminActions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -10,6 +11,8 @@ use App\Models\User;
 
 class UserController extends Controller
 {
+    use LogsAdminActions;
+
     public function index(Request $request)
     {
         if (!Auth::check() || Auth::user()->usertype_id != 1) {
@@ -86,6 +89,15 @@ class UserController extends Controller
                 'contactnum' => 0,
             ]);
 
+            // Log the user creation
+            $this->logAdminAction(
+                'User Created',
+                'created',
+                'Created user ' . $validated['email'] . ' (' . ($validated['usertype_id'] == 1 ? 'Admin' : 'User') . ')',
+                'User',
+                $user->id
+            );
+
             return response()->json([
                 'message' => 'User created successfully',
                 'user' => $user->load('profile')
@@ -110,6 +122,15 @@ class UserController extends Controller
         $user->availabilities()->delete();
         $user->appointmentRequests()->delete();
         
+        // Log the deletion
+        $this->logAdminAction(
+            'User Deleted',
+            'deleted',
+            'Deleted user ' . $user->email,
+            'User',
+            $user->id
+        );
+
         $user->delete();
 
         return response()->json(['message' => 'User deleted successfully']);
@@ -129,7 +150,17 @@ class UserController extends Controller
             'usertype_id' => 'required|in:1,2'
         ]);
 
+        $oldType = $user->usertype_id;
         $user->update(['usertype_id' => $validated['usertype_id']]);
+
+        // Log the role change
+        $this->logAdminAction(
+            'User Role Updated',
+            'updated',
+            'Changed ' . $user->email . ' role from ' . ($oldType == 1 ? 'Admin' : 'User') . ' to ' . ($validated['usertype_id'] == 1 ? 'Admin' : 'User'),
+            'User',
+            $user->id
+        );
 
         return response()->json([
             'message' => 'User role updated successfully',

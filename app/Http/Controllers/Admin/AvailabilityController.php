@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Traits\LogsAdminActions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Availability;
@@ -10,6 +11,7 @@ use App\Models\AppointmentRequest;
 
 class AvailabilityController extends Controller
 {
+    use LogsAdminActions;
     public function index(Request $request)
     {
         if (!Auth::check() || Auth::user()->usertype_id != 1) {
@@ -74,11 +76,25 @@ class AvailabilityController extends Controller
         $validated = $request->validate([
             'date' => ['required', 'date'],
             'is_available' => ['required', 'boolean'],
+            'slots' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $availability = Availability::updateOrCreate(
             ['user_id' => Auth::id(), 'date' => $validated['date']],
-            ['is_available' => $validated['is_available']]
+            [
+                'is_available' => $validated['is_available'],
+                'slots' => $validated['is_available'] ? $validated['slots'] : null,
+            ]
+        );
+
+        // Log the scheduling action
+        $action = $availability->wasRecentlyCreated ? 'created' : 'updated';
+        $this->logAdminAction(
+            'Schedule ' . ucfirst($action),
+            $action === 'created' ? 'scheduled' : 'updated',
+            'Set availability for ' . $validated['date'] . ' - ' . ($validated['is_available'] ? 'Available' : 'Unavailable') . ($validated['slots'] ? ' (Slots: ' . $validated['slots'] . ')' : ''),
+            'Availability',
+            $availability->id
         );
 
         return response()->json($availability);
@@ -94,9 +110,25 @@ class AvailabilityController extends Controller
             'date' => ['required', 'date'],
         ]);
 
+        // Get the availability record before deleting for logging
+        $availability = Availability::where('user_id', Auth::id())
+            ->where('date', $validated['date'])
+            ->first();
+
         Availability::where('user_id', Auth::id())
             ->where('date', $validated['date'])
             ->delete();
+
+        // Log the deletion action
+        if ($availability) {
+            $this->logAdminAction(
+                'Schedule Deleted',
+                'deleted',
+                'Removed availability for ' . $validated['date'],
+                'Availability',
+                $availability->id
+            );
+        }
 
         return response()->json(['status' => 'deleted']);
     }

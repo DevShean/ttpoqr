@@ -8,8 +8,8 @@
     <div class="mb-4 sm:mb-6 md:mb-8">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">System Logs</h1>
-                <p class="mt-1 text-xs sm:text-sm md:text-base text-gray-600">View all system activities and events</p>
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Admin Activity Log</h1>
+                <p class="mt-1 text-xs sm:text-sm md:text-base text-gray-600">Track all admin actions and approvals</p>
             </div>
         </div>
     </div>
@@ -29,17 +29,20 @@
                            class="w-full px-3 sm:px-4 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
                 </div>
 
-                <!-- Log Type Filter -->
+                <!-- Action Type Filter -->
                 <div>
-                    <label for="type" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Log Type</label>
-                    <select id="type" 
-                            name="type"
+                    <label for="action_type" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Action Type</label>
+                    <select id="action_type" 
+                            name="action_type"
                             class="w-full px-3 sm:px-4 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                        <option value="">All Types</option>
-                        <option value="info" {{ request('type') === 'info' ? 'selected' : '' }}>Info</option>
-                        <option value="warning" {{ request('type') === 'warning' ? 'selected' : '' }}>Warning</option>
-                        <option value="error" {{ request('type') === 'error' ? 'selected' : '' }}>Error</option>
-                        <option value="success" {{ request('type') === 'success' ? 'selected' : '' }}>Success</option>
+                        <option value="">All Actions</option>
+                        <option value="approved" {{ request('action_type') === 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="rejected" {{ request('action_type') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        <option value="scheduled" {{ request('action_type') === 'scheduled' ? 'selected' : '' }}>Scheduled</option>
+                        <option value="created" {{ request('action_type') === 'created' ? 'selected' : '' }}>Created</option>
+                        <option value="updated" {{ request('action_type') === 'updated' ? 'selected' : '' }}>Updated</option>
+                        <option value="deleted" {{ request('action_type') === 'deleted' ? 'selected' : '' }}>Deleted</option>
+                        <option value="archived" {{ request('action_type') === 'archived' ? 'selected' : '' }}>Archived</option>
                     </select>
                 </div>
 
@@ -93,30 +96,34 @@
 
         <!-- Terminal Content -->
         <div class="bg-gray-900 p-2 sm:p-3 md:p-4 font-mono text-[11px] sm:text-xs md:text-sm overflow-y-auto max-h-64 sm:max-h-96 md:max-h-[600px]" id="logTerminal">
-            @if(isset($logs) && is_countable($logs) && count($logs) > 0)
+            @if($logs->count() > 0)
                 @foreach($logs as $log)
-                    <div class="mb-2 sm:mb-3 leading-relaxed log-entry break-words" data-type="{{ strtolower($log['type'] ?? 'info') }}">
-                        <span class="text-gray-500 whitespace-nowrap">[{{ substr($log['timestamp'] ?? now()->format('Y-m-d H:i:s'), 5) }}]</span>
+                    <div class="mb-2 sm:mb-3 leading-relaxed log-entry break-words" data-action="{{ strtolower($log->action_type) }}">
+                        <span class="text-gray-500 whitespace-nowrap">[{{ $log->created_at->format('M d, Y h:i A') }}]</span>
                         <span class="log-type {{ 
-                            strtolower($log['type'] ?? 'info') === 'error' ? 'text-red-400' :
-                            (strtolower($log['type'] ?? 'info') === 'warning' ? 'text-yellow-400' :
-                            (strtolower($log['type'] ?? 'info') === 'success' ? 'text-green-400' : 'text-blue-400'))
+                            strtolower($log->action_type) === 'rejected' ? 'text-red-400' :
+                            (strtolower($log->action_type) === 'scheduled' ? 'text-yellow-400' :
+                            (strtolower($log->action_type) === 'approved' ? 'text-green-400' :
+                            (strtolower($log->action_type) === 'deleted' ? 'text-red-400' : 'text-blue-400')))
                         }}">
-                            [{{ substr(strtoupper($log['type'] ?? 'INFO'), 0, 4) }}]
+                            [{{ substr(strtoupper($log->action_type), 0, 4) }}]
                         </span>
                         <span class="text-gray-300">
-                            {{ Str::limit($log['message'] ?? 'Unknown event', 60, '...') }}
+                            {{ $log->action }}
                         </span>
-                        @if($log['user'] ?? null)
+                        @if($log->description)
+                            <span class="text-gray-400 text-[10px] sm:text-xs">— {{ Str::limit($log->description, 60, '...') }}</span>
+                        @endif
+                        @if($log->admin)
                             <span class="text-gray-500 hidden sm:inline">by</span>
-                            <span class="text-purple-400 hidden sm:inline text-[10px] sm:text-xs md:text-sm">{{ Str::limit($log['user'], 20, '...') }}</span>
+                            <span class="text-purple-400 hidden sm:inline text-[10px] sm:text-xs md:text-sm">{{ Str::limit($log->admin->email, 20, '...') }}</span>
                         @endif
                     </div>
                 @endforeach
             @else
                 <div class="text-gray-500 text-center py-4 sm:py-6">
-                    <p class="text-[10px] sm:text-xs">$ ls logs/</p>
-                    <p class="mt-2 text-[10px] sm:text-xs">No logs found</p>
+                    <p class="text-[10px] sm:text-xs">$ ls admin_logs/</p>
+                    <p class="mt-2 text-[10px] sm:text-xs">No admin actions logged</p>
                 </div>
             @endif
             
@@ -127,7 +134,7 @@
         </div>
 
         <!-- Pagination -->
-        @if(isset($logs) && method_exists($logs, 'links'))
+        @if($logs->hasPages())
         <div class="px-3 sm:px-4 md:px-6 py-4 md:py-6 border-t border-gray-700 overflow-x-auto bg-gray-800">
             <style>
                 .pagination { 
@@ -182,7 +189,7 @@
         <div class="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-sm">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs sm:text-sm font-medium text-gray-600">Total Logs</p>
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">Total Actions</p>
                     <p class="text-lg sm:text-2xl font-bold text-gray-900 mt-1">{{ $totalLogs ?? 0 }}</p>
                 </div>
                 <div class="p-2 sm:p-3 bg-gray-100 rounded-lg">
@@ -193,22 +200,22 @@
         <div class="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-sm">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs sm:text-sm font-medium text-gray-600">Errors</p>
-                    <p class="text-lg sm:text-2xl font-bold text-red-600 mt-1">{{ $errorCount ?? 0 }}</p>
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">Approved</p>
+                    <p class="text-lg sm:text-2xl font-bold text-green-600 mt-1">{{ $approvedCount ?? 0 }}</p>
                 </div>
-                <div class="p-2 sm:p-3 bg-red-100 rounded-lg">
-                    <i class="fi fi-rr-circle-exclamation text-lg sm:text-xl text-red-600"></i>
+                <div class="p-2 sm:p-3 bg-green-100 rounded-lg">
+                    <i class="fi fi-rr-check text-lg sm:text-xl text-green-600"></i>
                 </div>
             </div>
         </div>
         <div class="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 shadow-sm">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs sm:text-sm font-medium text-gray-600">Warnings</p>
-                    <p class="text-lg sm:text-2xl font-bold text-yellow-600 mt-1">{{ $warningCount ?? 0 }}</p>
+                    <p class="text-xs sm:text-sm font-medium text-gray-600">Rejected</p>
+                    <p class="text-lg sm:text-2xl font-bold text-red-600 mt-1">{{ $rejectedCount ?? 0 }}</p>
                 </div>
-                <div class="p-2 sm:p-3 bg-yellow-100 rounded-lg">
-                    <i class="fi fi-rr-exclamation text-lg sm:text-xl text-yellow-600"></i>
+                <div class="p-2 sm:p-3 bg-red-100 rounded-lg">
+                    <i class="fi fi-rr-circle-xmark text-lg sm:text-xl text-red-600"></i>
                 </div>
             </div>
         </div>

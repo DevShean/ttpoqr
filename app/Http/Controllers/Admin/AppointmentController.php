@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Traits\LogsAdminActions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -13,6 +14,7 @@ use App\Mail\AppointmentRejectedNotification;
 
 class AppointmentController extends Controller
 {
+    use LogsAdminActions;
     public function index(Request $request)
     {
         if (!Auth::check() || Auth::user()->usertype_id != 1) {
@@ -122,8 +124,17 @@ class AppointmentController extends Controller
         \DB::beginTransaction();
 
         try {
-            // Mark this availability as unavailable for future requests
-            $availability->update(['is_available' => false]);
+            // Decrement slots if they exist, otherwise mark as unavailable
+            if ($availability->slots !== null && $availability->slots > 0) {
+                $newSlots = $availability->slots - 1;
+                $availability->update([
+                    'slots' => $newSlots,
+                    'is_available' => $newSlots > 0 // Mark unavailable only when slots reach 0
+                ]);
+            } else {
+                // No slots set, just mark as unavailable (backward compatibility)
+                $availability->update(['is_available' => false]);
+            }
 
             // Mark the appointment request as approved with the time
             $appointmentRequest->update([
@@ -142,6 +153,15 @@ class AppointmentController extends Controller
             }
 
             \DB::commit();
+
+            // Log the approval action
+            $this->logAdminAction(
+                'Appointment Approved',
+                'approved',
+                'Approved appointment for ' . $appointmentRequest->user->email . ' at ' . $validated['appointment_time'],
+                'AppointmentRequest',
+                $appointmentRequest->id
+            );
 
             return response()->json([
                 'message' => 'Appointment approved successfully',
@@ -183,6 +203,15 @@ class AppointmentController extends Controller
             \Log::warning('Failed to send appointment rejection email: ' . $mailError->getMessage());
         }
 
+        // Log the rejection action
+        $this->logAdminAction(
+            'Appointment Rejected',
+            'rejected',
+            'Rejected appointment for ' . $appointmentRequest->user->email . '. Reason: ' . ($validated['reason'] ?? 'No reason provided'),
+            'AppointmentRequest',
+            $appointmentRequest->id
+        );
+
         return response()->json([
             'message' => 'Appointment rejected successfully',
             'appointment' => $appointmentRequest
@@ -198,6 +227,15 @@ class AppointmentController extends Controller
         // Archive by soft deleting or marking as archived
         $appointmentRequest->update(['is_archived' => true]);
 
+        // Log the archive action
+        $this->logAdminAction(
+            'Appointment Archived',
+            'archived',
+            'Archived appointment for ' . $appointmentRequest->user->email,
+            'AppointmentRequest',
+            $appointmentRequest->id
+        );
+
         return response()->json([
             'message' => 'Appointment archived successfully',
             'appointment' => $appointmentRequest
@@ -209,6 +247,15 @@ class AppointmentController extends Controller
         if (!Auth::check() || Auth::user()->usertype_id != 1) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
+
+        // Log the deletion action before deleting
+        $this->logAdminAction(
+            'Appointment Deleted',
+            'deleted',
+            'Deleted appointment for ' . $appointmentRequest->user->email,
+            'AppointmentRequest',
+            $appointmentRequest->id
+        );
 
         // Permanently delete the appointment
         $appointmentRequest->delete();

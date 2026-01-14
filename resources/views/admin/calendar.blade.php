@@ -2,8 +2,12 @@
 
 @section('title', 'Calendar')
 
+@push('head')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@endpush
+
 @section('content')
-<div class="min-h-screen bg-gray-50 p-3 md:p-6" x-data="calendarAvailability()" x-init="init()">
+    <div class="min-h-screen bg-gray-50 p-3 md:p-6" x-data="calendarAvailability()" x-init="init()">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
         <div class="mb-6 md:mb-8">
@@ -89,7 +93,7 @@
                 <template x-for="cell in visibleCells" :key="cell.key">
                     <button
                         :disabled="!cell.inMonth || !cell.canEdit"
-                        @click="toggleDay(cell.date)"
+                        @click="cell.inMonth && cell.canEdit && !cell.available ? openSlotModal(cell.date) : toggleDay(cell.date)"
                         :class="{
                             'opacity-30': !cell.inMonth,
                             'opacity-50 cursor-not-allowed': cell.inMonth && !cell.canEdit,
@@ -114,7 +118,7 @@
                         <!-- Availability Status -->
                         <div class="flex items-center justify-center">
                             <template x-if="cell.inMonth">
-                                <div class="flex items-center gap-1">
+                                <div class="flex items-center gap-1 flex-col text-center">
                                     <span class="hidden md:inline text-xs font-medium"
                                           :class="{
                                               'text-emerald-600': cell.available && cell.canEdit,
@@ -123,6 +127,8 @@
                                           }"
                                           x-text="cell.canEdit ? (cell.available ? 'Available' : 'Unavailable') : 'Past'">
                                     </span>
+                                    <!-- Slots display for available days -->
+                                    <span x-show="cell.available && cell.slots" class="text-xs text-emerald-600 font-semibold" x-text="cell.slots + ' slots'"></span>
                                     <span class="md:hidden">
                                         <svg x-show="cell.available && cell.canEdit" class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -181,6 +187,9 @@
                 unavailableCount: 0,
                 onlyAvailable: false,
                 status: '',
+                selectedDate: null,
+                selectedDateFormatted: '',
+                slotCount: 10,
                 init() { 
                     this.build(); 
                     this.fetch(); 
@@ -224,7 +233,8 @@
                             date: this.toLocalISO(date),
                             day: d,
                             inMonth: true,
-                            available: false,  // Changed from true to false
+                            available: false,
+                            slots: null,
                             canEdit: !isPast
                         });
                     }
@@ -264,16 +274,23 @@
                         
                         const map = new Map(items.map(i => [
                             i.date.split('T')[0],
-                            (i.is_available === true || i.is_available === 1 || i.is_available === '1')
+                            {
+                                available: (i.is_available === true || i.is_available === 1 || i.is_available === '1'),
+                                slots: i.slots || null
+                            }
                         ]));
                         
                         this.cells = this.cells.map(c => {
                             // If date has an appointment, mark as unavailable
                             if (appointedDates.includes(c.date)) {
-                                return { ...c, available: false };
+                                return { ...c, available: false, slots: null };
                             }
                             // Only update if the date exists in the response, otherwise keep as unavailable
-                            return { ...c, available: map.has(c.date) ? map.get(c.date) : c.available };
+                            if (map.has(c.date)) {
+                                const data = map.get(c.date);
+                                return { ...c, available: data.available, slots: data.slots };
+                            }
+                            return c;
                         });
                         
                         this.updateCounts();
@@ -290,7 +307,13 @@
                     if (!cell || !cell.inMonth || !cell.canEdit) return;
                     
                     const next = !cell.available;
-                    this.status = 'Saving…';
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                    });
                     
                     fetch('/admin/availability', {
                         method: 'POST',
@@ -302,7 +325,8 @@
                         },
                         body: JSON.stringify({ 
                             date, 
-                            is_available: next 
+                            is_available: next,
+                            slots: null
                         })
                     })
                     .then(r => {
@@ -311,86 +335,237 @@
                     })
                     .then(() => { 
                         cell.available = next; 
+                        cell.slots = null;
                         this.updateCounts(); 
                         this.applyFilter(); 
-                        this.status = 'Saved!';
-                        setTimeout(() => this.status = '', 1500);
+                        Toast.fire({
+                            icon: 'success',
+                            title: next ? 'Day marked as available' : 'Day marked as unavailable'
+                        });
                     })
                     .catch(() => { 
-                        this.status = 'Save failed'; 
-                        setTimeout(() => this.status = '', 3000);
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'Failed to save changes'
+                        });
+                    });
+                },
+                openSlotModal(date) {
+                    this.selectedDate = date;
+                    const dateObj = new Date(date);
+                    this.selectedDateFormatted = dateObj.toLocaleDateString(undefined, { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    const cell = this.cells.find(c => c.date === date);
+                    this.slotCount = cell?.slots || 10;
+                    
+                    Swal.fire({
+                        title: 'Set Available Slots',
+                        html: `
+                            <p class="text-gray-600 mb-4">For <strong>${this.selectedDateFormatted}</strong></p>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of slots</label>
+                                <input type="number" id="slotInput" min="0" max="999" value="${this.slotCount}" 
+                                       class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg text-center text-lg font-semibold focus:border-emerald-500 focus:outline-none">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Quick select</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button onclick="document.getElementById('slotInput').value = 5; document.getElementById('slotInput').dispatchEvent(new Event('input'))" 
+                                            class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-medium">5</button>
+                                    <button onclick="document.getElementById('slotInput').value = 10; document.getElementById('slotInput').dispatchEvent(new Event('input'))" 
+                                            class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-medium">10</button>
+                                    <button onclick="document.getElementById('slotInput').value = 12; document.getElementById('slotInput').dispatchEvent(new Event('input'))" 
+                                            class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-medium">12</button>
+                                    <button onclick="document.getElementById('slotInput').value = 15; document.getElementById('slotInput').dispatchEvent(new Event('input'))" 
+                                            class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-medium">15</button>
+                                    <button onclick="document.getElementById('slotInput').value = 20; document.getElementById('slotInput').dispatchEvent(new Event('input'))" 
+                                            class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-medium">20</button>
+                                    <button onclick="document.getElementById('slotInput').value = 25; document.getElementById('slotInput').dispatchEvent(new Event('input'))" 
+                                            class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm font-medium">25</button>
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonColor: '#10b981',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Confirm',
+                        cancelButtonText: 'Cancel',
+                        showCancelButton: true,
+                        didOpen: () => {
+                            document.getElementById('slotInput').focus();
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.slotCount = parseInt(document.getElementById('slotInput').value) || 0;
+                            this.saveSlots();
+                        }
+                    });
+                },
+                saveSlots() {
+                    if (!this.selectedDate) return;
+                    const cell = this.cells.find(c => c.date === this.selectedDate);
+                    if (!cell) return;
+                    
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500,
+                        timerProgressBar: true,
+                    });
+                    
+                    fetch('/admin/availability', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ 
+                            date: this.selectedDate, 
+                            is_available: true,
+                            slots: this.slotCount > 0 ? this.slotCount : null
+                        })
+                    })
+                    .then(r => {
+                        if (!r.ok) throw new Error('Network response was not ok');
+                        return r.json();
+                    })
+                    .then(() => { 
+                        cell.available = true;
+                        cell.slots = this.slotCount > 0 ? this.slotCount : null;
+                        this.updateCounts(); 
+                        this.applyFilter(); 
+                        Toast.fire({
+                            icon: 'success',
+                            title: `Day set to available with ${this.slotCount} slots`
+                        });
+                    })
+                    .catch(() => { 
+                        Toast.fire({
+                            icon: 'error',
+                            title: 'Failed to save slots'
+                        });
                     });
                 },
                 setAllAvailable() {
-                    if (!confirm('Make all days in this month available?')) return;
-                    
-                    this.status = 'Updating All...';
-                    const currentMonthCells = this.cells.filter(c => c.inMonth);
-                    const updates = currentMonthCells.map(cell => ({
-                        date: cell.date,
-                        is_available: true
-                    }));
-                    
-                    fetch('/admin/availability/bulk', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({ updates })
-                    })
-                    .then(r => {
-                        if (!r.ok) throw new Error('Network response was not ok');
-                        return r.json();
-                    })
-                    .then(() => {
-                        currentMonthCells.forEach(cell => cell.available = true);
-                        this.updateCounts();
-                        this.applyFilter();
-                        this.status = 'All days set to available!';
-                        setTimeout(() => this.status = '', 2000);
-                    })
-                    .catch(() => {
-                        this.status = 'Update failed';
-                        setTimeout(() => this.status = '', 3000);
+                    Swal.fire({
+                        title: 'Make all days available?',
+                        text: 'This will mark all days in this month as available.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#10b981',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Yes, make available',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (!result.isConfirmed) return;
+                        
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true,
+                        });
+                        
+                        const currentMonthCells = this.cells.filter(c => c.inMonth);
+                        const updates = currentMonthCells.map(cell => ({
+                            date: cell.date,
+                            is_available: true
+                        }));
+                        
+                        fetch('/admin/availability/bulk', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ updates })
+                        })
+                        .then(r => {
+                            if (!r.ok) throw new Error('Network response was not ok');
+                            return r.json();
+                        })
+                        .then(() => {
+                            currentMonthCells.forEach(cell => cell.available = true);
+                            this.updateCounts();
+                            this.applyFilter();
+                            Toast.fire({
+                                icon: 'success',
+                                title: 'All days set to available!'
+                            });
+                        })
+                        .catch(() => {
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'Update failed'
+                            });
+                        });
                     });
                 },
                 setAllUnavailable() {
-                    if (!confirm('Make all days in this month unavailable?')) return;
-                    
-                    this.status = 'Updating All...';
-                    const currentMonthCells = this.cells.filter(c => c.inMonth);
-                    const updates = currentMonthCells.map(cell => ({
-                        date: cell.date,
-                        is_available: false
-                    }));
-                    
-                    fetch('/admin/availability/bulk', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify({ updates })
-                    })
-                    .then(r => {
-                        if (!r.ok) throw new Error('Network response was not ok');
-                        return r.json();
-                    })
-                    .then(() => {
-                        currentMonthCells.forEach(cell => cell.available = false);
-                        this.updateCounts();
-                        this.applyFilter();
-                        this.status = 'All days set to unavailable!';
-                        setTimeout(() => this.status = '', 2000);
-                    })
-                    .catch(() => {
-                        this.status = 'Update failed';
-                        setTimeout(() => this.status = '', 3000);
+                    Swal.fire({
+                        title: 'Make all days unavailable?',
+                        text: 'This will mark all days in this month as unavailable.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Yes, make unavailable',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (!result.isConfirmed) return;
+                        
+                        const Toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            timerProgressBar: true,
+                        });
+                        
+                        const currentMonthCells = this.cells.filter(c => c.inMonth);
+                        const updates = currentMonthCells.map(cell => ({
+                            date: cell.date,
+                            is_available: false
+                        }));
+                        
+                        fetch('/admin/availability/bulk', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({ updates })
+                        })
+                        .then(r => {
+                            if (!r.ok) throw new Error('Network response was not ok');
+                            return r.json();
+                        })
+                        .then(() => {
+                            currentMonthCells.forEach(cell => cell.available = false);
+                            this.updateCounts();
+                            this.applyFilter();
+                            Toast.fire({
+                                icon: 'success',
+                                title: 'All days set to unavailable!'
+                            });
+                        })
+                        .catch(() => {
+                            Toast.fire({
+                                icon: 'error',
+                                title: 'Update failed'
+                            });
+                        });
                     });
                 },
                 prevMonth() { 
