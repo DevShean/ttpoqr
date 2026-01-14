@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use App\Models\Profile;
 use App\Models\Availability;
 use App\Models\AppointmentRequest;
+use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -71,5 +72,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function appointmentRequests()
     {
         return $this->hasMany(AppointmentRequest::class);
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 }

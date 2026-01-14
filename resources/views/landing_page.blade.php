@@ -452,7 +452,12 @@
                 <div id="forgotForm" class="transition-opacity duration-300 opacity-0 hidden">
                     <button id="closeModal2" class="absolute top-4 right-4 text-gray-600 hover:text-black font-bold text-xl">&times;</button>
                     <h2 class="text-2xl font-bold mb-6 text-center">Recover Account</h2>
-                    <form class="flex flex-col gap-4">
+                    
+                    <!-- Forgot Password Message -->
+                    <div id="forgotMessage"></div>
+
+                    <form id="forgotPasswordForm" class="flex flex-col gap-4" method="POST" action="{{ route('password.email') }}">
+                        @csrf
                         <div class="relative">
                             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" 
                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -460,7 +465,7 @@
                                     d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25H4.5a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5H4.5A2.25 2.25 0 0 0 2.25 6.75m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-6.75 4.05a2.25 2.25 0 0 1-2.31 0l-6.75-4.05a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
                             </svg>
 
-                            <input type="email" placeholder="Email"
+                            <input type="email" name="email" placeholder="Email" required
                                 class="border p-3 pl-10 w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4a0000]">
                         </div>
                         <button type="submit" class="bg-[#4a0000] text-white py-3 rounded-lg font-semibold hover:bg-[#6a0000] transition">Send Reset Link</button>
@@ -596,6 +601,69 @@
                     } catch(err) {
                         console.error(err);
                         loginMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">Network error. Please check your connection and try again.</div>`;
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = originalText;
+                    }
+                });
+            })();
+
+            // Forgot password form handler
+            (function(){
+                const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+                const forgotMessage = document.getElementById('forgotMessage');
+                if (!forgotPasswordForm) return;
+
+                forgotPasswordForm.addEventListener('submit', async function(e){
+                    e.preventDefault();
+                    forgotMessage.innerHTML = '';
+                    
+                    const submitBtn = forgotPasswordForm.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerText;
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = 'Sending...';
+
+                    const formData = new FormData(forgotPasswordForm);
+                    const payload = {};
+                    formData.forEach((v,k)=> payload[k]=v);
+
+                    try {
+                        const res = await fetch(forgotPasswordForm.action, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            },
+                            body: JSON.stringify(payload),
+                        });
+
+                        if (res.ok) {
+                            const json = await res.json();
+                            forgotMessage.innerHTML = `<div class="mb-4 text-sm text-green-700 bg-green-100 p-3 rounded">Success! Check your email for the password reset link.</div>`;
+                            forgotPasswordForm.reset();
+                            setTimeout(() => {
+                                closeModalAnimated();
+                            }, 2000);
+                        } else if (res.status === 404) {
+                            forgotMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">No account found with this email address.</div>`;
+                        } else if (res.status === 422) {
+                            const json = await res.json();
+                            const errors = json.errors || {};
+                            let list = '<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded"><ul class="list-disc pl-5">';
+                            for (const key in errors) {
+                                errors[key].forEach(msg => { list += `<li>${msg}</li>`; });
+                            }
+                            list += '</ul></div>';
+                            forgotMessage.innerHTML = list;
+                        } else {
+                            const text = await res.text();
+                            console.error('Forgot password error', res.status, text);
+                            forgotMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">An error occurred. Please try again later.</div>`;
+                        }
+                    } catch(err) {
+                        console.error(err);
+                        forgotMessage.innerHTML = `<div class="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">Network error. Please check your connection and try again.</div>`;
                     } finally {
                         submitBtn.disabled = false;
                         submitBtn.innerText = originalText;

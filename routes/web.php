@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\User\QrController;
 use App\Http\Controllers\User\HomeController;
@@ -27,6 +28,11 @@ Route::post('/signup', [RegisterController::class, 'store'])->name('signup');
 
 // Login endpoint used by the landing page login modal
 Route::post('/login', [LoginController::class, 'store'])->name('login');
+
+// Password reset endpoints
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 
 // Admin and User home routes (basic closures that check auth and usertype)
 Route::get('/admin/home', function () {
