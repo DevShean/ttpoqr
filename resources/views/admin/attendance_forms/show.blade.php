@@ -90,8 +90,8 @@
                                 </td>
                                 <td class="px-4 sm:px-6 py-4">
                                     <button onclick="deleteRecord({{ $record->id }})"
-                                            class="px-3 py-1 bg-red-50 text-red-700 border border-red-200 text-xs sm:text-sm font-medium rounded-lg hover:bg-red-100 transition">
-                                        <i class="fi fi-rr-trash"></i>
+                                            class="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 text-xs sm:text-sm font-medium rounded-lg hover:bg-red-100 transition whitespace-nowrap">
+                                        <i class="fi fi-rr-trash mr-1.5"></i><span class="hidden sm:inline">Delete</span>
                                     </button>
                                 </td>
                             </tr>
@@ -577,16 +577,58 @@
         }).then(result => {
             if (result.isConfirmed) {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                Swal.fire({
+                    title: 'Deleting...',
+                    didOpen: (modal) => {
+                        Swal.showLoading();
+                    },
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+                
                 fetch(`/admin/attendance-records/${recordId}`, {
                     method: 'DELETE',
                     headers: {
+                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
                     }
                 })
-                .then(r => r.json())
-                .then(() => {
-                    window.location.reload();
+                .then(r => {
+                    if (!r.ok) {
+                        return r.json().then(e => Promise.reject(e));
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: 'Attendance record has been deleted.',
+                            icon: 'success',
+                            confirmButtonColor: '#3B82F6'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: data.message || 'Failed to delete record',
+                            icon: 'error',
+                            confirmButtonColor: '#EF4444'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error!',
+                        text: error.message || 'Failed to delete record',
+                        icon: 'error',
+                        confirmButtonColor: '#EF4444'
+                    });
                 });
             }
         });

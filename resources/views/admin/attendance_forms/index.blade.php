@@ -71,9 +71,9 @@
                                                 class="px-2.5 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium rounded-lg hover:bg-blue-100 transition">
                                             <i class="fi fi-rr-eye"></i><span class="hidden md:inline ml-1">View</span>
                                         </a>
-                                        <button onclick="deleteForm({{ $form->id }})"
-                                                class="px-2.5 py-1.5 bg-red-50 text-red-700 border border-red-200 text-xs font-medium rounded-lg hover:bg-red-100 transition">
-                                            <i class="fi fi-rr-trash"></i><span class="hidden md:inline ml-1">Delete</span>
+                                        <button onclick="downloadPdf('{{ route('admin.attendance_forms.download-pdf', $form) }}', '{{ $form->date->format('M d, Y') }}')"
+                                                class="px-2.5 py-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-medium rounded-lg hover:bg-green-100 transition">
+                                            <i class="fi fi-rr-download"></i><span class="hidden md:inline ml-1">PDF</span>
                                         </button>
                                     </div>
                                 </td>
@@ -112,9 +112,9 @@
                                     class="flex-1 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium rounded-lg hover:bg-blue-100 transition text-center">
                                 <i class="fi fi-rr-eye mr-1"></i>View
                             </a>
-                            <button onclick="deleteForm({{ $form->id }})"
-                                    class="flex-1 px-3 py-2 bg-red-50 text-red-700 border border-red-200 text-xs font-medium rounded-lg hover:bg-red-100 transition">
-                                <i class="fi fi-rr-trash mr-1"></i>Delete
+                            <button onclick="downloadPdf('{{ route('admin.attendance_forms.download-pdf', $form) }}', '{{ $form->date->format('M d, Y') }}')"
+                                    class="flex-1 px-3 py-2 bg-green-50 text-green-700 border border-green-200 text-xs font-medium rounded-lg hover:bg-green-100 transition text-center">
+                                <i class="fi fi-rr-download mr-1"></i>PDF
                             </button>
                         </div>
                     </div>
@@ -133,97 +133,33 @@
 </div>
 
 <script>
-    function deleteForm(formId) {
+    function downloadPdf(pdfUrl, formDate) {
         Swal.fire({
-            title: 'Delete Form?',
-            text: 'This will delete the form and all associated attendance records.',
-            icon: 'warning',
+            title: 'Download PDF?',
+            text: 'Generate and download the attendance form for ' + formDate,
+            icon: 'info',
             showCancelButton: true,
-            confirmButtonText: 'Delete',
-            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Download',
+            confirmButtonColor: '#10b981',
             cancelButtonColor: '#6b7280',
         }).then(result => {
             if (result.isConfirmed) {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                
                 Swal.fire({
-                    title: 'Deleting...',
+                    title: 'Generating PDF...',
                     didOpen: (modal) => {
                         Swal.showLoading();
                     },
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 });
-                
-                fetch(`/admin/attendance-forms/${formId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    console.log('Response ok:', response.ok);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Delete response:', data);
-                    console.log('Response data type:', typeof data);
-                    console.log('Response data success:', data.success);
-                    
-                    if (!data.success) {
-                        throw new Error(data.message || 'Delete failed');
-                    }
-                    const formRow = document.querySelector(`[data-form-id="${formId}"]`);
-                    if (formRow) {
-                        // Fade out and remove
-                        formRow.style.opacity = '0';
-                        formRow.style.transition = 'opacity 0.3s ease-out';
-                        setTimeout(() => {
-                            formRow.remove();
-                            
-                            // Check if there are any forms left
-                            const formsCards = document.querySelectorAll('[data-form-id]');
-                            
-                            if (formsCards.length === 0) {
-                                // If no forms left, reload to show empty state
-                                window.location.reload();
-                            } else {
-                                // Show success message
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Deleted!',
-                                    text: 'Attendance form has been deleted.',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                });
-                            }
-                        }, 300);
-                    } else {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Deleted!',
-                            text: 'Attendance form has been deleted.',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    console.error('Error message:', error.message);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: 'Failed to delete the form. ' + error.message
-                    });
-                });
+
+                // Trigger the download
+                window.location.href = pdfUrl;
+
+                // Close the loading dialog after a short delay
+                setTimeout(() => {
+                    Swal.close();
+                }, 1500);
             }
         });
     }

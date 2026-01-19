@@ -51,6 +51,9 @@ Route::middleware(['web'])->group(function () {
 
     Route::get('/admin/qr', [AdminQrController::class, 'index'])->name('admin.qr');
     Route::get('/admin/qr/tokens', [AdminQrController::class, 'getTokens'])->name('admin.qr.tokens');
+    Route::get('/admin/users/{user}/check-qr', [AdminQrController::class, 'checkQrToken'])->name('admin.users.checkQr');
+    Route::post('/admin/users/{user}/generate-qr', [AdminQrController::class, 'generateQr'])->name('admin.users.generateQr');
+    Route::get('/admin/users/{user}/download-qr-pdf', [AdminQrController::class, 'downloadQrPdf'])->name('admin.users.downloadQrPdf');
 
     Route::get('/admin/calendar', function () {
         if (!Auth::check() || Auth::user()->usertype_id != 1) {
@@ -72,10 +75,21 @@ Route::middleware(['web'])->group(function () {
     Route::get('/admin/attendance-forms/create', [AttendanceFormController::class, 'create'])->name('admin.attendance_forms.create');
     Route::post('/admin/attendance-forms', [AttendanceFormController::class, 'store'])->name('admin.attendance_forms.store');
     Route::get('/admin/attendance-forms/{attendanceForm}', [AttendanceFormController::class, 'show'])->name('admin.attendance_forms.show');
+    Route::get('/admin/attendance-forms/{attendanceForm}/download-pdf', [AttendanceFormController::class, 'downloadPdf'])->name('admin.attendance_forms.download-pdf');
     Route::delete('/admin/attendance-forms/{attendanceForm}', [AttendanceFormController::class, 'destroy'])->name('admin.attendance_forms.destroy');
     Route::post('/admin/attendance-forms/validate-qr', [AttendanceFormController::class, 'validateQr'])->name('admin.attendance_forms.validateQr');
     Route::post('/admin/attendance-forms/save-record', [AttendanceFormController::class, 'saveRecord'])->name('admin.attendance_forms.saveRecord');
-    Route::delete('/admin/attendance-records/{attendanceRecord}', [AttendanceFormController::class, 'deleteRecord'])->name('admin.attendance_records.delete');
+    Route::delete('/admin/attendance-records/{id}', function ($id) {
+        \Log::info('DELETE /admin/attendance-records/{id} called with id: ' . $id);
+        
+        $record = \App\Models\AttendanceRecord::find($id);
+        if (!$record) {
+            \Log::error('Record not found with ID: ' . $id);
+            return response()->json(['success' => false, 'message' => 'Record not found'], 404);
+        }
+        
+        return app(\App\Http\Controllers\Admin\AttendanceFormController::class)->deleteRecord($record);
+    })->name('admin.attendance_records.delete');
 
     Route::get('/admin/logs', [LogController::class, 'index'])->name('admin.logs');
 });
@@ -173,4 +187,31 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/user/send-verification-email', [UserUserController::class, 'sendVerificationEmail'])->name('user.send-verification');
     Route::post('/user/send-verification-code', [UserUserController::class, 'sendVerificationCode'])->name('user.send-verification-code');
     Route::post('/user/verify-code', [UserUserController::class, 'verifyCode'])->name('user.verify-code');
+});
+// Test endpoint for debugging deletion
+Route::get('/test/delete/{recordId}', function ($recordId) {
+    \Log::info('=== TEST ENDPOINT: Attempting to delete record ID: ' . $recordId);
+    
+    $record = \App\Models\AttendanceRecord::find($recordId);
+    
+    if (!$record) {
+        \Log::error('=== TEST ENDPOINT: Record not found with ID: ' . $recordId);
+        return response()->json(['error' => 'Record not found', 'id' => $recordId], 404);
+    }
+    
+    \Log::info('=== TEST ENDPOINT: Record found: ' . $record->name . ', ID: ' . $record->id);
+    
+    $result = $record->delete();
+    
+    $stillExists = \App\Models\AttendanceRecord::where('id', $recordId)->exists();
+    
+    \Log::info('=== TEST ENDPOINT: Delete returned: ' . ($result ? 'true' : 'false'));
+    \Log::info('=== TEST ENDPOINT: Record still exists: ' . ($stillExists ? 'YES' : 'NO'));
+    
+    return response()->json([
+        'deleted' => $result,
+        'stillExists' => $stillExists,
+        'recordName' => $record->name,
+        'recordId' => $record->id
+    ]);
 });

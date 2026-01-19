@@ -175,21 +175,60 @@ class AttendanceFormController extends Controller
 
     public function deleteRecord(AttendanceRecord $record)
     {
-        $this->authorize('delete', $record);
-        
-        // Log the deletion
-        $this->logAdminAction(
-            'Attendance Record Deleted',
-            'deleted',
-            'Deleted attendance record for ' . $record->name . ' from form ID: ' . $record->attendance_form_id,
-            'AttendanceRecord',
-            $record->id
-        );
-        
-        $formId = $record->attendance_form_id;
-        $record->delete();
+        try {
+            \Log::info('=== deleteRecord METHOD CALLED ===');
+            \Log::info('Method: ' . request()->method());
+            \Log::info('Path: ' . request()->path());
+            \Log::info('Record ID: ' . $record->id);
+            \Log::info('Record Name: ' . $record->name);
+            \Log::info('Record exists in DB: ' . (AttendanceRecord::where('id', $record->id)->exists() ? 'YES' : 'NO'));
+            
+            \Log::info('User ID: ' . Auth::id());
+            \Log::info('User type: ' . (Auth::user() ? Auth::user()->usertype_id : 'NONE'));
+            
+            // Check authorization
+            $this->authorize('delete', $record);
+            \Log::info('Authorization PASSED');
+            
+            // Store the data before deletion
+            $recordName = $record->name;
+            $formId = $record->attendance_form_id;
+            $recordId = $record->id;
+            
+            \Log::info('About to call $record->delete()');
+            
+            // Delete using Eloquent
+            $result = $record->delete();
+            
+            \Log::info('Delete method returned: ' . ($result ? 'true' : 'false'));
+            
+            // Check if it's actually gone
+            $stillExists = AttendanceRecord::where('id', $recordId)->exists();
+            \Log::info('Record still exists after delete: ' . ($stillExists ? 'YES (PROBLEM!)' : 'NO (OK)'));
+            
+            // Log the deletion after storing the data
+            $this->logAdminAction(
+                'Attendance Record Deleted',
+                'deleted',
+                'Deleted attendance record for ' . $recordName . ' from form ID: ' . $formId,
+                'AttendanceRecord',
+                $recordId
+            );
+            
+            \Log::info('=== deleteRecord COMPLETED SUCCESSFULLY ===');
 
-        return response()->json(['success' => true, 'message' => 'Record deleted']);
+            return response()->json(['success' => true, 'message' => 'Record deleted']);
+        } catch (\Exception $e) {
+            \Log::error('=== deleteRecord EXCEPTION ===');
+            \Log::error('Exception class: ' . get_class($e));
+            \Log::error('Message: ' . $e->getMessage());
+            \Log::error('File: ' . $e->getFile() . ':' . $e->getLine());
+            
+            return response()->json([
+                'success' => false, 
+                'message' => 'Failed to delete record: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy(AttendanceForm $form)
@@ -242,5 +281,32 @@ class AttendanceFormController extends Controller
             
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function downloadPdf(AttendanceForm $attendanceForm)
+    {
+        // Get the form with its records
+        $form = $attendanceForm->load('records');
+        
+        // Create PDF from blade view
+        $pdf = \PDF::loadView('admin.attendance_forms.pdf', [
+            'form' => $form
+        ]);
+
+        // Log the PDF download
+        try {
+            $this->logAdminAction(
+                'Attendance Form PDF Downloaded',
+                'exported',
+                'Downloaded PDF for attendance form on ' . $form->date->format('M d, Y'),
+                'AttendanceForm',
+                $form->id
+            );
+        } catch (\Exception $e) {
+            \Log::warning('Failed to log PDF download: ' . $e->getMessage());
+        }
+
+        // Download the PDF
+        return $pdf->download('attendance_form_' . $form->date->format('Y-m-d') . '.pdf');
     }
 }

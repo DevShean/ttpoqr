@@ -149,6 +149,10 @@
                                 <td class="px-4 md:px-6 py-3 md:py-4">
                                     <div class="flex items-center gap-1.5">
                                         @if($user->id !== Auth::id())
+                                            <button onclick="window.generateQrForUser({{ $user->id }}, '{{ addslashes($user->profile->fname ?? 'User') }} {{ addslashes($user->profile->lname ?? '') }}')"
+                                                    class="px-2.5 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium rounded-lg hover:bg-blue-100 transition active:scale-95">
+                                                <i class="fi fi-rr-qrcode"></i><span class="hidden md:inline ml-1">QR Code</span>
+                                            </button>
                                             <button onclick="window.deleteUser({{ $user->id }}, '{{ addslashes($user->profile->fname ?? 'User') }} {{ addslashes($user->profile->lname ?? '') }}')"
                                                     class="px-2.5 py-1.5 bg-red-50 text-red-700 border border-red-200 text-xs font-medium rounded-lg hover:bg-red-100 transition active:scale-95">
                                                 <i class="fi fi-rr-trash"></i><span class="hidden md:inline ml-1">Delete</span>
@@ -212,10 +216,16 @@
                         </div>
 
                         @if($user->id !== Auth::id())
-                            <button onclick="window.deleteUser({{ $user->id }}, '{{ addslashes($user->profile->fname ?? 'User') }} {{ addslashes($user->profile->lname ?? '') }}')"
-                                    class="w-full px-3 py-2.5 bg-red-50 text-red-700 border border-red-200 text-xs font-medium rounded-lg hover:bg-red-100 transition">
-                                <i class="fi fi-rr-trash mr-2"></i>Delete Account
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.generateQrForUser({{ $user->id }}, '{{ addslashes($user->profile->fname ?? 'User') }} {{ addslashes($user->profile->lname ?? '') }}')"
+                                        class="flex-1 px-3 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium rounded-lg hover:bg-blue-100 transition">
+                                    <i class="fi fi-rr-qrcode mr-2"></i>Generate QR
+                                </button>
+                                <button onclick="window.deleteUser({{ $user->id }}, '{{ addslashes($user->profile->fname ?? 'User') }} {{ addslashes($user->profile->lname ?? '') }}')"
+                                        class="flex-1 px-3 py-2.5 bg-red-50 text-red-700 border border-red-200 text-xs font-medium rounded-lg hover:bg-red-100 transition">
+                                    <i class="fi fi-rr-trash mr-2"></i>Delete Account
+                                </button>
+                            </div>
                         @else
                             <div class="w-full px-3 py-2.5 bg-gray-50 text-gray-600 border border-gray-200 text-xs font-medium rounded-lg text-center italic">
                                 Current User
@@ -348,6 +358,110 @@
     window.deleteUser = function(userId, userName) {
         return userManager().deleteUser(userId, userName);
     };
+
+    window.generateQrForUser = function(userId, userName) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        // First check if QR already exists
+        fetch(`/admin/users/${userId}/check-qr`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(r => {
+            if (!r.ok) return r.json().then(e => Promise.reject(e));
+            return r.json();
+        })
+        .then(data => {
+            if (data.exists) {
+                // QR already exists, show it directly
+                showQrCode(data, false);
+            } else {
+                // No QR exists, ask for confirmation
+                Swal.fire({
+                    title: 'Generate QR Code?',
+                    html: `<p>Generate a new QR code for <strong>${userName}</strong>?</p>
+                           <p class="text-sm text-blue-600 mt-2">ℹ️ This will create a 10-minute QR code that the user can scan to access their profile.</p>`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Generate QR',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#3B82F6',
+                    cancelButtonColor: '#6b7280',
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        createNewQr(userId, userName, csrfToken);
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: error.message || error.error || 'Failed to check QR code',
+                icon: 'error',
+                confirmButtonColor: '#EF4444'
+            });
+        });
+    };
+
+    function createNewQr(userId, userName, csrfToken) {
+        fetch(`/admin/users/${userId}/generate-qr`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(r => {
+            if (!r.ok) return r.json().then(e => Promise.reject(e));
+            return r.json();
+        })
+        .then(data => {
+            showQrCode(data, true);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: error.message || error.error || 'Failed to generate QR code',
+                icon: 'error',
+                confirmButtonColor: '#EF4444'
+            });
+        });
+    }
+
+    function showQrCode(data, isNew) {
+        const minutesLeft = Math.floor(data.ttl_seconds / 60);
+        const titleText = isNew ? 'QR Code Generated!' : 'QR Code Found!';
+        const subtitleText = isNew ? 'A new QR code has been created.' : 'Using existing QR code that hasn\'t expired yet.';
+        Swal.fire({
+            title: titleText,
+            html: `<div class="space-y-4">
+                    <p class="text-sm text-gray-600">${subtitleText}</p>
+                    <div class="bg-white p-4 rounded-lg border border-gray-200 inline-block">
+                        ${data.qr_svg}
+                    </div>
+                    <p class="text-sm text-gray-600">Token: <code class="bg-gray-100 px-2 py-1 rounded text-xs break-all">${data.token}</code></p>
+                    <p class="text-xs text-red-600 font-semibold">⏱️ Expires in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}</p>
+                    <a href="${data.download_url}" class="inline-block mt-4 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
+                        <i class="fi fi-rr-download mr-2"></i>Download as PDF
+                    </a>
+                </div>`,
+            icon: 'success',
+            confirmButtonColor: '#3B82F6',
+            confirmButtonText: 'Close',
+            allowOutsideClick: false,
+            allowEscapeKey: false
+        });
+    }
 </script>
 
 @endsection
