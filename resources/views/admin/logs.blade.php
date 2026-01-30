@@ -62,123 +62,95 @@
                 <!-- Buttons -->
                 <div class="flex items-end gap-2">
                     <button type="submit" class="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 transition active:scale-95">
-                        <i class="fi fi-rr-search mr-1"></i><span class="hidden sm:inline">Search</span>
+                        <i class="fi fi-rr-search mr-1"></i>Search
                     </button>
                     <a href="{{ route('admin.logs') }}" class="flex-1 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-300 transition text-center">
-                        <i class="fi fi-rr-refresh mr-1"></i><span class="hidden sm:inline">Clear</span>
+                        <i class="fi fi-rr-refresh mr-1"></i>Clear
                     </a>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- Terminal Log View -->
-    <div class="bg-gray-900 rounded-lg border border-gray-700 shadow-sm overflow-hidden">
-        <!-- Terminal Header -->
-        <div class="bg-gray-800 border-b border-gray-700 px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2 overflow-x-auto">
-            <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                <div class="flex items-center gap-1">
-                    <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500"></div>
-                    <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-yellow-500"></div>
-                    <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>
-                </div>
-                <span class="text-[10px] sm:text-xs lg:text-sm text-gray-400 font-mono whitespace-nowrap">logs@sys</span>
-            </div>
-            <div class="flex items-center gap-1 flex-shrink-0">
-                <button type="button" onclick="downloadLogs()" title="Download logs" class="p-1.5 sm:p-2 text-gray-400 hover:text-gray-200 transition active:scale-95 touch-manipulation">
-                    <i class="fi fi-rr-download text-xs sm:text-sm"></i>
-                </button>
-                <button type="button" onclick="clearTerminal()" title="Clear terminal" class="p-1.5 sm:p-2 text-gray-400 hover:text-gray-200 transition active:scale-95 touch-manipulation">
-                    <i class="fi fi-rr-trash text-xs sm:text-sm"></i>
+    <!-- Logs Table -->
+    <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <!-- Table Header with Actions -->
+        <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900">Activity Logs</h3>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="downloadLogs()" title="Download logs" class="p-2 text-gray-400 hover:text-gray-600 transition">
+                    <i class="fi fi-rr-download text-sm"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Terminal Content -->
-        <div class="bg-gray-900 p-2 sm:p-3 md:p-4 font-mono text-[11px] sm:text-xs md:text-sm overflow-y-auto max-h-64 sm:max-h-96 md:max-h-[600px]" id="logTerminal">
-            @if($logs->count() > 0)
-                @foreach($logs as $log)
-                    <div class="mb-2 sm:mb-3 leading-relaxed log-entry break-words" data-action="{{ strtolower($log->action_type) }}">
-                        <span class="text-gray-500 whitespace-nowrap">[{{ $log->created_at->format('M d, Y h:i A') }}]</span>
-                        <span class="log-type {{ 
-                            strtolower($log->action_type) === 'rejected' ? 'text-red-400' :
-                            (strtolower($log->action_type) === 'scheduled' ? 'text-yellow-400' :
-                            (strtolower($log->action_type) === 'approved' ? 'text-green-400' :
-                            (strtolower($log->action_type) === 'deleted' ? 'text-red-400' : 'text-blue-400')))
-                        }}">
-                            [{{ substr(strtoupper($log->action_type), 0, 4) }}]
-                        </span>
-                        <span class="text-gray-300">
-                            {{ $log->action }}
-                        </span>
-                        @if($log->description)
-                            <span class="text-gray-400 text-[10px] sm:text-xs">— {{ Str::limit($log->description, 60, '...') }}</span>
-                        @endif
-                        @if($log->admin)
-                            <span class="text-gray-500 hidden sm:inline">by</span>
-                            <span class="text-purple-400 hidden sm:inline text-[10px] sm:text-xs md:text-sm">{{ Str::limit($log->admin->email, 20, '...') }}</span>
-                        @endif
-                    </div>
-                @endforeach
-            @else
-                <div class="text-gray-500 text-center py-4 sm:py-6">
-                    <p class="text-[10px] sm:text-xs">$ ls admin_logs/</p>
-                    <p class="mt-2 text-[10px] sm:text-xs">No admin actions logged</p>
-                </div>
-            @endif
-            
-            <!-- Prompt -->
-            <div class="text-gray-400 pt-1 sm:pt-2 text-[10px] sm:text-xs">
-                $ <span class="animate-pulse">_</span>
-            </div>
+        <!-- Table Content -->
+        <div class="overflow-x-auto">
+            <table class="w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                        <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Description</th>
+                        <th class="px-2 sm:px-4 md:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @if($logs->count() > 0)
+                        @foreach($logs as $log)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                                    <div class="sm:hidden">
+                                        <div class="font-medium">{{ $log->created_at->format('M d, h:i A') }}</div>
+                                        <div class="text-gray-500 text-xs">{{ $log->created_at->format('Y') }}</div>
+                                    </div>
+                                    <div class="hidden sm:block">
+                                        {{ $log->created_at->format('M d, Y h:i A') }}
+                                    </div>
+                                </td>
+                                <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full {{
+                                        strtolower($log->action_type) === 'approved' ? 'bg-green-100 text-green-800' :
+                                        (strtolower($log->action_type) === 'rejected' ? 'bg-red-100 text-red-800' :
+                                        (strtolower($log->action_type) === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
+                                        (strtolower($log->action_type) === 'deleted' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800')))
+                                    }}">
+                                        {{ ucfirst($log->action_type) }}
+                                    </span>
+                                </td>
+                                <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-4 text-xs sm:text-sm text-gray-900">
+                                    <div class="max-w-24 sm:max-w-none truncate">{{ $log->action }}</div>
+                                    <div class="sm:hidden text-gray-500 text-xs mt-1">
+                                        {{ $log->description ? Str::limit($log->description, 40, '...') : '' }}
+                                    </div>
+                                </td>
+                                <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-4 text-xs sm:text-sm text-gray-500 hidden sm:table-cell">
+                                    {{ $log->description ? Str::limit($log->description, 60, '...') : '-' }}
+                                </td>
+                                <td class="px-2 sm:px-4 md:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                                    @if($log->admin)
+                                        <div class="max-w-20 sm:max-w-none truncate">{{ Str::limit($log->admin->email, 20, '...') }}</div>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="5" class="px-2 sm:px-4 md:px-6 py-8 sm:py-12 text-center text-xs sm:text-sm text-gray-500">
+                                No admin actions logged
+                            </td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
         </div>
 
         <!-- Pagination -->
         @if($logs->hasPages())
-        <div class="px-3 sm:px-4 md:px-6 py-4 md:py-6 border-t border-gray-700 overflow-x-auto bg-gray-800">
-            <style>
-                .pagination { 
-                    display: flex; 
-                    justify-content: center; 
-                    gap: 0.25rem;
-                    flex-wrap: wrap;
-                }
-                .pagination a, 
-                .pagination span {
-                    padding: 0.5rem 0.75rem;
-                    font-size: 0.875rem;
-                    border: 1px solid #374151;
-                    background-color: #1f2937;
-                    color: #d1d5db;
-                    border-radius: 0.375rem;
-                    text-decoration: none;
-                    transition: all 0.2s;
-                    font-family: monospace;
-                }
-                .pagination a:hover {
-                    background-color: #374151;
-                    border-color: #60a5fa;
-                    color: #60a5fa;
-                }
-                .pagination span.active {
-                    background-color: #3b82f6;
-                    color: white;
-                    border-color: #3b82f6;
-                }
-                .pagination span:disabled,
-                .pagination span.disabled {
-                    color: #6b7280;
-                    cursor: not-allowed;
-                    background-color: #111827;
-                }
-                @media (max-width: 640px) {
-                    .pagination a, 
-                    .pagination span {
-                        padding: 0.375rem 0.5rem;
-                        font-size: 0.75rem;
-                    }
-                }
-            </style>
+        <div class="px-4 py-3 border-t border-gray-200 bg-gray-50">
             {{ $logs->links() }}
         </div>
         @endif
@@ -237,48 +209,59 @@
     function downloadLogs() {
         Swal.fire({
             title: 'Download Logs',
-            text: 'Choose a format to download the logs',
+            text: 'Download the logs as CSV file?',
             icon: 'info',
             showCancelButton: true,
-            confirmButtonText: 'CSV',
+            confirmButtonText: 'Download',
             cancelButtonText: 'Cancel',
             confirmButtonColor: '#3B82F6'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Create CSV download link
-                const terminal = document.getElementById('logTerminal');
-                const text = terminal.innerText;
+                // Generate CSV from table data
+                let csv = 'Timestamp,Status,Action,Description,Admin\n';
+
+                const rows = document.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 4) {
+                        // Get timestamp (handle mobile format)
+                        let timestamp = cells[0].textContent.trim();
+                        if (timestamp.includes('\n')) {
+                            // Mobile format: combine date and time
+                            const parts = timestamp.split('\n');
+                            timestamp = parts[0].trim() + ' ' + parts[1].trim();
+                        }
+
+                        const status = cells[1].textContent.trim();
+                        const actionCell = cells[2];
+                        let action = actionCell.querySelector('.truncate') ? actionCell.querySelector('.truncate').textContent.trim() : actionCell.textContent.trim();
+                        let description = '';
+
+                        // Check if description is in separate column or under action
+                        if (cells.length === 5) {
+                            // Desktop: description in separate column
+                            description = cells[3].textContent.trim();
+                        } else {
+                            // Mobile: description under action
+                            const descDiv = actionCell.querySelector('.sm\\:hidden');
+                            if (descDiv) {
+                                description = descDiv.textContent.trim();
+                            }
+                        }
+
+                        const admin = cells[cells.length - 1].textContent.trim();
+
+                        csv += `"${timestamp}","${status}","${action}","${description}","${admin}"\n`;
+                    }
+                });
+
                 const element = document.createElement('a');
-                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-                element.setAttribute('download', `logs-${new Date().toISOString()}.txt`);
+                element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+                element.setAttribute('download', `logs-${new Date().toISOString().split('T')[0]}.csv`);
                 element.style.display = 'none';
                 document.body.appendChild(element);
                 element.click();
                 document.body.removeChild(element);
-            }
-        });
-    }
-
-    function clearTerminal() {
-        Swal.fire({
-            title: 'Clear Terminal?',
-            text: 'This will only clear the view, not delete the actual logs',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Clear',
-            cancelButtonText: 'Cancel',
-            confirmButtonColor: '#EF4444'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('logTerminal').innerHTML = `
-                    <div class="text-gray-500 text-center py-8">
-                        <p>$ clear</p>
-                        <p class="mt-8">Terminal cleared</p>
-                    </div>
-                    <div class="text-gray-400 pt-2">
-                        $ <span class="animate-pulse">_</span>
-                    </div>
-                `;
             }
         });
     }
